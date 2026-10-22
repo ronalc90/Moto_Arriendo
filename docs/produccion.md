@@ -7,6 +7,9 @@ Hazla en orden. Cada paso dice **dónde** se hace.
 
 ## 1. Borra los datos de prueba (en la app)
 
+> ✅ Ya se hizo el 21/10/2026 después de las pruebas completas. Solo repítelo si vuelves a cargar los datos de
+> prueba (`supabase/seed/seed_test_data.sql`).
+
 1. Entra a la app como administrador.
 2. Ve a **Configuración** → sección **Respaldo y datos**.
 3. Toca **Borrar datos de prueba** y luego **Sí, borrar los datos de prueba**.

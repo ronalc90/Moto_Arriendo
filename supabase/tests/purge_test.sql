@@ -30,7 +30,11 @@ delete from public.notifications;
 insert into public.notifications (profile_id, kind, title, body, url, dedupe_key) values
   ('00000000-0000-4000-8000-0000000000a1', 'x', 'Nuevo pago', '$40.000', '/admin/pagos/00000000-0000-4000-8000-0000000000f1', 'k1'),
   ('00000000-0000-4000-8000-0000000000a1', 'x', 'Inspección pendiente: Hamer (prueba)', 'PRU01A', '/admin/inspecciones', 'k2'),
-  ('00000000-0000-4000-8000-0000000000a1', 'x', 'Nuevo pago de Conductor Real', '$40.000', '/admin/pagos/00000000-0000-4000-8000-0000000000f9', 'k3');
+  ('00000000-0000-4000-8000-0000000000a1', 'x', 'Nuevo pago de Conductor Real', '$40.000', '/admin/pagos/00000000-0000-4000-8000-0000000000f9', 'k3'),
+  ('00000000-0000-4000-8000-0000000000a1', 'test', 'Notificación de prueba', 'x', '/admin', 'k4');
+insert into public.expenses (motorcycle_id, category, amount, description) values
+  ('00000000-0000-4000-8000-0000000000e1', 'gps', 180000, 'GPS prueba'),
+  ('00000000-0000-4000-8000-0000000000e9', 'gps', 180000, 'GPS real');
 
 -- Run it as the admin, like the app does.
 set local role authenticated;
@@ -55,6 +59,10 @@ do $$ begin
   assert exists (select 1 from public.drivers where id = '00000000-0000-4000-8000-0000000000d9'), 'real driver deleted!';
   assert (select count(*) from public.notifications) = 1, 'test notifications left: ' || (select string_agg(title, ', ') from public.notifications);
   assert exists (select 1 from public.notifications where dedupe_key = 'k3'), 'real notification deleted!';
+  assert exists (select 1 from public.expenses where description = 'GPS real'), 'real expense deleted!';
+  assert not exists (select 1 from public.audit_log a where a.table_name = 'expenses'
+                       and not exists (select 1 from public.expenses e where e.id = a.record_id)), 'audit rows of test expense left';
+  assert exists (select 1 from public.audit_log a join public.expenses e on e.id = a.record_id), 'audit of real expense deleted!';
   raise notice 'Purge tests OK';
 end $$;
 rollback;
