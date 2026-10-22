@@ -105,14 +105,47 @@ export async function sendTestNotification(): Promise<ActionState> {
 
 /** Storage folders that belong to a driver (flat: <bucket>/<driverId>/<file>). */
 const DRIVER_BUCKETS = ["receipts", "inspections", "damages", "documents", "contracts"] as const;
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
-async function emptyFolder(supabase: Awaited<ReturnType<typeof createClient>>, bucket: string, folder: string) {
+type Supa = Awaited<ReturnType<typeof createClient>>;
+
+async function emptyFolder(supabase: Supa, bucket: string, folder: string) {
   for (let round = 0; round < 20; round++) {
     const { data } = await supabase.storage.from(bucket).list(folder, { limit: 100 });
     const files = (data ?? []).filter((f) => f.id).map((f) => `${folder}/${f.name}`);
     if (!files.length) return;
     const { error } = await supabase.storage.from(bucket).remove(files);
     if (error) return;
+  }
+}
+
+/** Sub-folders (named with a uuid) of a storage folder. */
+async function uuidFolders(supabase: Supa, bucket: string, parent: string): Promise<string[]> {
+  const { data } = await supabase.storage.from(bucket).list(parent, { limit: 1000 });
+  return (data ?? []).filter((f) => !f.id && UUID.test(f.name)).map((f) => f.name);
+}
+
+/**
+ * Removes folders whose owner (driver or motorcycle) no longer exists, e.g.
+ * leftovers of deleted test data. Files of existing records are never touched.
+ */
+async function removeOrphanFolders(supabase: Supa) {
+  const [{ data: drivers }, { data: motos }] = await Promise.all([
+    supabase.from("drivers").select("id"),
+    supabase.from("motorcycles").select("id"),
+  ]);
+  if (!drivers || !motos) return; // never delete blindly if we could not read the owners
+  const driverIds = new Set(drivers.map((d) => d.id));
+  const motoIds = new Set(motos.map((m) => m.id));
+  for (const bucket of DRIVER_BUCKETS) {
+    for (const id of await uuidFolders(supabase, bucket, "")) {
+      if (!driverIds.has(id)) await emptyFolder(supabase, bucket, id);
+    }
+  }
+  for (const parent of ["moto", "incidents"]) {
+    for (const id of await uuidFolders(supabase, "documents", parent)) {
+      if (!motoIds.has(id)) await emptyFolder(supabase, "documents", `${parent}/${id}`);
+    }
   }
 }
 
@@ -125,14 +158,8 @@ export async function purgeTestData(): Promise<ActionState> {
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("admin_purge_test_data");
   if (error) return fail(dbError(error, "No se pudieron borrar los datos de prueba."));
-  const r = (data ?? {}) as { motorcycles?: number; drivers?: number; payments?: number; driver_folders?: string[]; moto_folders?: string[] };
-  for (const id of r.driver_folders ?? []) {
-    for (const bucket of DRIVER_BUCKETS) await emptyFolder(supabase, bucket, id);
-  }
-  for (const id of r.moto_folders ?? []) {
-    await emptyFolder(supabase, "documents", `moto/${id}`);
-    await emptyFolder(supabase, "documents", `incidents/${id}`);
-  }
+  const r = (data ?? {}) as { motorcycles?: number; drivers?: number; payments?: number };
+  await removeOrphanFolders(supabase);
   revalidatePath("/admin", "layout");
   return done(
     `Listo. Se borraron ${r.motorcycles ?? 0} motos, ${r.drivers ?? 0} conductores y ${r.payments ?? 0} pagos de prueba con sus fotos.`,
