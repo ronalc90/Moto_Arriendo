@@ -219,6 +219,7 @@ end;
 $$;
 
 reset role;
+select set_config('request.jwt.claims', '', true); -- back to a plain SQL-editor session
 
 -- Storage read isolation (objects created as privileged role)
 insert into storage.objects (bucket_id, name) values ('receipts', '00000000-0000-4000-8000-0000000000d2/b.jpg');
@@ -231,6 +232,7 @@ begin
 end;
 $$;
 reset role;
+select set_config('request.jwt.claims', '', true); -- back to a plain SQL-editor session
 
 -- ---------------------------------------------------------------------------
 -- Admin assertions: approving a payment stamps reviewer and writes audit log
@@ -262,5 +264,6 @@ begin
 end;
 $$;
 reset role;
+select set_config('request.jwt.claims', '', true); -- back to a plain SQL-editor session
 
 rollback;

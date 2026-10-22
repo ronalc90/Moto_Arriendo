@@ -79,5 +79,25 @@ check(!audit || audit.length === 0, "Jeison NO ve el registro de auditoría");
 const { error: roleErr, data: roleData } = await b.from("profiles").update({ role: "admin" }).eq("id", (await b.auth.getUser()).data.user.id).select();
 check(Boolean(roleErr) || (roleData ?? []).length === 0, "Jeison NO puede volverse administrador");
 
+// Admin-only maintenance functions
+const { error: purgeErr } = await b.rpc("admin_purge_test_data");
+check(Boolean(purgeErr), "Jeison NO puede borrar datos de prueba");
+const { error: anonPurgeErr } = await anon.rpc("admin_purge_test_data");
+check(Boolean(anonPurgeErr), "anónimo NO puede borrar datos de prueba");
+const adminOnly = [
+  ["admin_create_user", { p_email: "intruso@example.com", p_password: "Clave12345!", p_full_name: "Intruso", p_role: "admin", p_phone: null }],
+  ["admin_create_driver", { p_full_name: "Intruso", p_phone: "3009998877", p_password: "Clave12345!", p_national_id: "X-999" }],
+  ["admin_set_password", { p_user_id: "00000000-0000-0000-0000-000000000000", p_password: "Clave12345!" }],
+  ["admin_set_driver_active", { p_driver_id: "00000000-0000-0000-0000-000000000000", p_active: false }],
+];
+for (const [fn, args] of adminOnly) {
+  const { error } = await b.rpc(fn, args);
+  check(Boolean(error), `Jeison NO puede usar ${fn}`);
+}
+const { data: driverSeesTest } = await b.rpc("has_test_data");
+check(driverSeesTest !== true, "has_test_data no le dice nada a un conductor");
+const { error: exportErr, data: exportData } = await b.rpc("admin_app_config_status");
+check(Boolean(exportErr) || exportData == null || Object.keys(exportData).length === 0, "Jeison NO ve la configuración de avisos");
+
 console.log(failures ? `\n${failures} prueba(s) fallaron` : "\n✔ Todas las pruebas de seguridad (RLS) pasaron");
 process.exit(failures ? 1 : 0);

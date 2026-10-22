@@ -96,5 +96,6 @@ begin
 end;
 $$;
 reset role;
+select set_config('request.jwt.claims', '', true); -- back to a plain SQL-editor session
 
 rollback;
