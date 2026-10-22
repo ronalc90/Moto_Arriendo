@@ -6,7 +6,7 @@ import { ActionForm } from "@/components/action-form";
 import { Collapsible } from "@/components/collapsible";
 import { FileUpload } from "@/components/file-upload";
 import { PaymentCalendar, monthRange, parseMonth } from "@/components/payment-calendar";
-import { Badge, ButtonLink, Card, Field, Input, PageHeader, SectionTitle, Stat, Textarea } from "@/components/ui";
+import { Alert, Badge, ButtonLink, Card, Field, Input, PageHeader, SectionTitle, Stat, Textarea } from "@/components/ui";
 import { LightBadge } from "@/components/traffic-light";
 import { requireAdmin } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
@@ -56,6 +56,11 @@ export default async function ContractDetailPage({ params, searchParams }: PageP
         action={c.status === "active" && s ? <LightBadge light={s.light} lateDays={s.late_days} /> : <Badge>Terminado</Badge>}
       />
 
+      {sp.hecho === "terminado" ? (
+        <div className="mb-4">
+          <Alert tone="ok">Contrato terminado. El saldo pendiente se conserva aquí y la moto quedó libre.</Alert>
+        </div>
+      ) : null}
       {s ? (
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           <Stat label="Días cobrables" value={s.chargeable_days} hint={`hasta ${formatDate(s.last_due_date)}`} />

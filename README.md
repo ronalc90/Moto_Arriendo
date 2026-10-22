@@ -29,6 +29,7 @@ todos los cálculos de días y horas límite.
 - [Manual del administrador](docs/manual-administrador.md)
 - [Manual del conductor](docs/manual-conductor.md)
 - [Avisos por WhatsApp: evaluación de costos](docs/whatsapp.md)
+- [Diagramas de flujo (abrir en el navegador)](docs/diagramas.html)
 
 ## Fases entregadas
 

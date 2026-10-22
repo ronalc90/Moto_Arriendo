@@ -30,14 +30,14 @@ declare
   d record;
 begin
   -- 0) Clean previous test data
-  delete from public.payments where motorcycle_id in (select id from public.motorcycles where plate in ('PRU01A', 'PRU02A'));
-  delete from public.inspections where motorcycle_id in (select id from public.motorcycles where plate in ('PRU01A', 'PRU02A'));
-  delete from public.damage_reports where motorcycle_id in (select id from public.motorcycles where plate in ('PRU01A', 'PRU02A'));
-  delete from public.incidents where motorcycle_id in (select id from public.motorcycles where plate in ('PRU01A', 'PRU02A'));
-  delete from public.loans where driver_id in (select d2.id from public.drivers d2 join public.profiles p on p.id = d2.profile_id where p.phone in ('3000000001', '3000000002'));
-  delete from public.contracts where motorcycle_id in (select id from public.motorcycles where plate in ('PRU01A', 'PRU02A'));
-  delete from public.motorcycles where plate in ('PRU01A', 'PRU02A');
-  delete from auth.users where email in ('3000000001@conductores.moto-arriendo.app', '3000000002@conductores.moto-arriendo.app');
+  delete from public.payments where motorcycle_id in (select id from public.motorcycles where plate in ('PRU01A', 'PRU02A', 'PRU03A'));
+  delete from public.inspections where motorcycle_id in (select id from public.motorcycles where plate in ('PRU01A', 'PRU02A', 'PRU03A'));
+  delete from public.damage_reports where motorcycle_id in (select id from public.motorcycles where plate in ('PRU01A', 'PRU02A', 'PRU03A'));
+  delete from public.incidents where motorcycle_id in (select id from public.motorcycles where plate in ('PRU01A', 'PRU02A', 'PRU03A'));
+  delete from public.loans where driver_id in (select d2.id from public.drivers d2 join public.profiles p on p.id = d2.profile_id where p.phone in ('3000000001', '3000000002', '3000000003'));
+  delete from public.contracts where motorcycle_id in (select id from public.motorcycles where plate in ('PRU01A', 'PRU02A', 'PRU03A'));
+  delete from public.motorcycles where plate in ('PRU01A', 'PRU02A', 'PRU03A');
+  delete from auth.users where email in ('3000000001@conductores.moto-arriendo.app', '3000000002@conductores.moto-arriendo.app', '3000000003@conductores.moto-arriendo.app');
 
   select id into v_owner from public.profiles where role = 'admin' and active order by created_at limit 1;
   if v_owner is null then
@@ -136,5 +136,5 @@ $$;
 -- Check: Hamer al día, Jeison 2 días de atraso
 select driver_name, plate, light, late_days, total_debt, pending_count
 from public.contract_overview
-where plate in ('PRU01A', 'PRU02A')
+where plate in ('PRU01A', 'PRU02A', 'PRU03A')
 order by plate;

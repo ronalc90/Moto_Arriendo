@@ -102,5 +102,5 @@ export async function endContract(_prev: ActionState, formData: FormData): Promi
   const { error } = await supabase.from("contracts").update({ status: "ended", end_date: end }).eq("id", id);
   if (error) return fail(dbError(error));
   revalidatePath("/admin", "layout");
-  return done("Contrato terminado. El saldo pendiente se conserva en la ficha.");
+  redirect(`/admin/contratos/${id}?hecho=terminado`);
 }

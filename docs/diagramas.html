@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="es-CO"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Diagramas · Moto Arriendo</title>
+<style>
+body{font-family:system-ui,sans-serif;background:#f5f4ef;color:#16181b;margin:0;padding:24px 16px}
+main{max-width:960px;margin:0 auto} h1{margin:0 0 4px} p.lead{color:#4a4f57;margin:0 0 24px}
+section{background:#fff;border:1px solid #e0ddd3;border-radius:16px;padding:16px 20px;margin:0 0 20px;overflow-x:auto}
+h2{font-size:18px;margin:0 0 12px}
+</style></head><body><main>
+<h1>Moto Arriendo · Diagramas de flujo</h1>
+<p class="lead">Arquitectura, inicio de sesión, pagos, semáforo, inspecciones, vencimientos, avisos y modelo de datos.</p>
+<section><h2>1. Vista general</h2><pre class="mermaid">flowchart LR
+  subgraph Celular[&quot;Celular / computador&quot;]
+    C[Conductor&lt;br/&gt;PWA instalada]
+    A[Administrador&lt;br/&gt;navegador]
+  end
+  subgraph Vercel[&quot;Vercel (app Next.js)&quot;]
+    P[proxy.ts&lt;br/&gt;refresca sesión y protege rutas]
+    S[Páginas y Server Actions&lt;br/&gt;validan datos con zod]
+  end
+  subgraph Supabase[&quot;Supabase&quot;]
+    AU[Auth&lt;br/&gt;usuario + contraseña]
+    DB[(PostgreSQL&lt;br/&gt;tablas + RLS&lt;br/&gt;contract_summary)]
+    ST[(Storage privado&lt;br/&gt;comprobantes, fotos,&lt;br/&gt;documentos)]
+  end
+  C &amp; A --&gt;|HTTPS| P --&gt; S
+  S --&gt;|sesión del usuario&lt;br/&gt;clave publicable| DB
+  S --&gt; AU
+  C --&gt;|sube fotos comprimidas&lt;br/&gt;a su propia carpeta| ST
+  S --&gt;|URLs firmadas&lt;br/&gt;que expiran| ST
+</pre></section>
+<section><h2>2. Inicio de sesión</h2><pre class="mermaid">flowchart TD
+  A[Abre la app] --&gt; B{¿Tiene sesión?}
+  B -- No --&gt; L[Pantalla Entrar]
+  L --&gt; C{¿Escribió un correo?}
+  C -- Sí --&gt; E[Usa el correo]
+  C -- No --&gt; F[Celular de 10 dígitos&lt;br/&gt;→ correo interno&lt;br/&gt;3001234567@conductores...]
+  E &amp; F --&gt; G[Supabase Auth&lt;br/&gt;verifica contraseña]
+  G -- Error --&gt; L
+  G -- OK --&gt; B
+  B -- Sí --&gt; H{¿Tiene perfil activo?}
+  H -- No --&gt; X[Cerrar sesión&lt;br/&gt;&#x27;Esta cuenta no tiene acceso&#x27;]
+  H -- Sí --&gt; R{Rol}
+  R -- Administrador --&gt; AD[Panel Hoy]
+  R -- Conductor --&gt; K{¿Aceptó tratamiento&lt;br/&gt;de datos?}
+  K -- No --&gt; CO[Autorización Ley 1581&lt;br/&gt;guarda fecha de aceptación]
+  CO --&gt; CD
+  K -- Sí --&gt; CD[Inicio del conductor]
+</pre></section>
+<section><h2>3. Pago diario (de punta a punta)</h2><pre class="mermaid">sequenceDiagram
+  autonumber
+  actor Co as Conductor
+  participant App as App (celular)
+  participant St as Storage privado
+  participant DB as PostgreSQL
+  actor Ad as Administrador
+
+  Co-&gt;&gt;App: Toca &quot;Subir pago&quot;
+  App-&gt;&gt;DB: contract_summary() → monto sugerido
+  Co-&gt;&gt;App: Toma foto del comprobante, confirma monto y método
+  App-&gt;&gt;App: Comprime la foto (máx. 1600 px, JPG)
+  App-&gt;&gt;St: Sube a receipts/&lt;id_conductor&gt;/...
+  App-&gt;&gt;DB: INSERT payments (monto, método, ruta)
+  DB-&gt;&gt;DB: Trigger: fuerza estado &quot;pendiente&quot;,&lt;br/&gt;reparte tarifa / abono, valida dueño
+  DB--&gt;&gt;App: Pago en revisión
+  Ad-&gt;&gt;App: Abre &quot;Revisar pagos&quot;
+  App-&gt;&gt;St: URL firmada del comprobante (expira)
+  Ad-&gt;&gt;DB: Aprueba (o rechaza con motivo)
+  DB-&gt;&gt;DB: Guarda revisado_por / revisado_en,&lt;br/&gt;audit_log, préstamo → pagado si llega a 0
+  Co-&gt;&gt;App: Ve su saldo y semáforo actualizados
+</pre></section>
+<section><h2>4. Cálculo del semáforo</h2><pre class="mermaid">flowchart TD
+  A[Hora actual en Bogotá] --&gt; B{¿Ya pasaron&lt;br/&gt;las 9:00 p. m.?}
+  B -- Sí --&gt; C[Último día vencido = hoy]
+  B -- No --&gt; D[Último día vencido = ayer]
+  C &amp; D --&gt; E[Días cobrables = días desde el inicio&lt;br/&gt;sin descansos ni exentos]
+  E --&gt; F[Debería pagar = días × tarifa]
+  F --&gt; G[Saldo tarifa = debería − tarifas aprobadas]
+  G --&gt; H[Deuda abonos obligatorios]
+  H --&gt; I[&quot;Deuda total = máx(saldo, 0) + deuda abonos&quot;]
+  I --&gt; J[Días de atraso = ⌈deuda ÷ cuota diaria⌉]
+  J --&gt; K{Días}
+  K -- 0 --&gt; V[🟢 Al día]
+  K -- 1 a 2 --&gt; Y[🟡 Atrasado]
+  K -- 3 o más --&gt; R[🔴 Devolver la moto]
+</pre></section>
+<section><h2>5. Inspección semanal</h2><pre class="mermaid">flowchart TD
+  A[Lunes: inspección pendiente] --&gt; B[Conductor abre &#x27;Inspección semanal&#x27;]
+  B --&gt; C[Foto frente] --&gt; D[Foto atrás] --&gt; E[Foto izquierda] --&gt; F[Foto derecha] --&gt; G[Foto tablero con km]
+  G --&gt; H[Escribe el kilometraje]
+  H --&gt; I[Lista: llantas, frenos, cadena, luces, aceite&lt;br/&gt;Bien / Revisar]
+  I --&gt; J[Enviar]
+  J --&gt; K[(Se guarda y actualiza el km de la moto)]
+  K --&gt; L[Admin revisa y marca como revisada]
+  A -. si no la sube .-&gt; M[Aparece como pendiente en el panel Hoy]
+</pre></section>
+<section><h2>6. Documentos y vencimientos</h2><pre class="mermaid">flowchart LR
+  A[Admin sube SOAT / seguro /&lt;br/&gt;técnico-mecánica / licencia&lt;br/&gt;con fecha de vencimiento] --&gt; B[(documents)]
+  B --&gt; C[Vista document_expirations&lt;br/&gt;último documento por tipo]
+  D[Fecha de compra + 2 años] --&gt; C
+  C --&gt; E{Días para vencer}
+  E -- ≤ 30 --&gt; F[Panel Hoy: por vencer]
+  E -- 30 / 15 / 7 --&gt; G[Avisos por correo y push&lt;br/&gt;Fase 2]
+</pre></section>
+<section><h2>7. Avisos automáticos</h2><pre class="mermaid">flowchart LR
+  subgraph DB[&quot;PostgreSQL (Supabase)&quot;]
+    T1[Triggers: pago nuevo,&lt;br/&gt;pago aprobado/rechazado,&lt;br/&gt;daño reportado] --&gt; N[(notifications)]
+    CR[pg_cron cada 15 min] --&gt; G[generate_notifications:&lt;br/&gt;recordatorio 7 p. m., atrasos,&lt;br/&gt;vencimientos 30/15/7,&lt;br/&gt;mantenimiento, inspección]
+    G --&gt; N
+    N --&gt;|trigger + pg_net| F
+    CR --&gt;|pg_net| F
+  end
+  F[Edge Function notify] --&gt; P[Web Push&lt;br/&gt;al celular]
+  F --&gt; E[Correo Resend&lt;br/&gt;administradores]
+  N --&gt; B[Campana de avisos&lt;br/&gt;en la app]
+</pre></section>
+<section><h2>Diagrama entidad-relación</h2><pre class="mermaid">erDiagram
+  profiles ||--o| drivers : &quot;es&quot;
+  profiles ||--o{ motorcycles : &quot;es dueño de&quot;
+  drivers ||--o{ contracts : firma
+  motorcycles ||--o{ contracts : &quot;se arrienda en&quot;
+  drivers ||--o{ loans : recibe
+  contracts ||--o{ payments : recibe
+  loans ||--o{ payments : &quot;se abona con&quot;
+  contracts ||--o{ exempt_days : tiene
+  motorcycles ||--o{ documents : tiene
+  drivers ||--o{ documents : tiene
+  motorcycles ||--o{ inspections : &quot;se inspecciona&quot;
+  drivers ||--o{ inspections : hace
+  motorcycles ||--o{ damage_reports : sufre
+  drivers ||--o{ damage_reports : reporta
+</pre></section>
+</main>
+<script type="module">
+import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.esm.min.mjs";
+mermaid.initialize({ startOnLoad: true, theme: "neutral" });
+</script></body></html>

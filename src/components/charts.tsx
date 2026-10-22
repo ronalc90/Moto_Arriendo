@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { formatCOP } from "@/lib/format";
 
 /** Compact money for axis ticks: $1,2 M / $350 mil */
@@ -20,8 +20,23 @@ function niceMax(v: number) {
   return step * p;
 }
 
-const W = 640;
 const H = 260;
+
+/** Measures the container so the SVG uses real pixels (readable labels on phones). */
+function useWidth() {
+  const ref = useRef<HTMLElement>(null);
+  const [width, setWidth] = useState(640);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const update = () => setWidth(Math.max(280, Math.round(el.getBoundingClientRect().width)));
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  return [ref, width] as const;
+}
 const PAD = { top: 16, right: 30, bottom: 30, left: 64 };
 
 type Point = { label: string; income: number; costs: number };
@@ -29,6 +44,7 @@ type Point = { label: string; income: number; costs: number };
 /** Grouped bars: income vs costs per month, with hover tooltip. */
 export function MonthlyBars({ data }: { data: Point[] }) {
   const [hover, setHover] = useState<number | null>(null);
+  const [ref, W] = useWidth();
   const max = niceMax(Math.max(1, ...data.flatMap((d) => [d.income, d.costs])));
   const iw = W - PAD.left - PAD.right;
   const ih = H - PAD.top - PAD.bottom;
@@ -38,7 +54,7 @@ export function MonthlyBars({ data }: { data: Point[] }) {
   const ticks = [0, 0.25, 0.5, 0.75, 1].map((t) => t * max);
 
   return (
-    <figure className="relative">
+    <figure ref={ref} className="relative">
       <Legend items={[{ label: "Ingresos (tarifas)", color: "var(--series-1)" }, { label: "Gastos", color: "var(--series-2)" }]} />
       <svg viewBox={`0 0 ${W} ${H}`} className="h-auto w-full" role="img" aria-label="Ingresos y gastos por mes">
         {ticks.map((t) => (
@@ -57,7 +73,7 @@ export function MonthlyBars({ data }: { data: Point[] }) {
               <Bar x={cx - barW - 1} y={y(d.income)} w={barW} h={PAD.top + ih - y(d.income)} color="var(--series-1)" />
               <Bar x={cx + 1} y={y(d.costs)} w={barW} h={PAD.top + ih - y(d.costs)} color="var(--series-2)" />
               <text x={cx} y={H - 10} textAnchor="middle" className="fill-ink-3 text-[11px]">
-                {d.label}
+                {band < 44 && i % 2 ? "" : d.label}
               </text>
               <rect
                 x={PAD.left + band * i}
@@ -107,6 +123,7 @@ function Bar({ x, y, w, h, color }: { x: number; y: number; w: number; h: number
 /** Cumulative net vs. the purchase price (payback line). */
 export function PaybackLine({ data, target }: { data: { label: string; value: number }[]; target: number }) {
   const [hover, setHover] = useState<number | null>(null);
+  const [ref, W] = useWidth();
   const values = data.map((d) => d.value);
   const max = niceMax(Math.max(target, 1, ...values));
   const lowest = Math.min(0, ...values);
@@ -119,7 +136,7 @@ export function PaybackLine({ data, target }: { data: { label: string; value: nu
   const ticks = [...(min < 0 && -min > max * 0.15 ? [min] : []), ...[0, 0.25, 0.5, 0.75, 1].map((t) => t * max)];
 
   return (
-    <figure className="relative">
+    <figure ref={ref} className="relative">
       <Legend
         items={[
           { label: "Neto acumulado", color: "var(--series-1)" },
@@ -144,7 +161,7 @@ export function PaybackLine({ data, target }: { data: { label: string; value: nu
           <g key={d.label}>
             <circle cx={x(i)} cy={y(d.value)} r={hover === i ? 5 : 3.5} fill="var(--series-1)" stroke="var(--surface)" strokeWidth={2} />
             <text x={x(i)} y={H - 10} textAnchor="middle" className="fill-ink-3 text-[11px]">
-              {data.length > 8 && i % 2 ? "" : d.label}
+              {data.length > Math.floor(W / 70) && i % Math.ceil(data.length / Math.floor(W / 70)) ? "" : d.label}
             </text>
             <rect
               x={x(i) - iw / Math.max(2, data.length) / 2}
