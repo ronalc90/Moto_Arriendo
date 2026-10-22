@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { Camera, FileText, Loader2, RefreshCw, Upload } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { compressImage, randomName } from "@/lib/image";
@@ -98,6 +98,18 @@ export function FileUpload({
       if (inputRef.current) inputRef.current.value = "";
     }
   }
+
+  // On slow connections a driver may pick a photo before the page finished
+  // loading; React would miss that change event, so process it on mount.
+  const pickedEarly = useRef(false);
+  useEffect(() => {
+    const early = inputRef.current?.files?.[0];
+    if (early && !pickedEarly.current) {
+      pickedEarly.current = true;
+      void handle(early);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- run once after hydration
+  }, []);
 
   const Icon = busy ? Loader2 : capture ? Camera : Upload;
 

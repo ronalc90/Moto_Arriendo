@@ -26,13 +26,13 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
         </p>
       </div>
       <div className="safe-bottom rounded-t-3xl bg-bg px-5 pt-7 pb-8 sm:mx-auto sm:mb-10 sm:w-full sm:max-w-md sm:rounded-3xl">
+        <CookieNotice />
         <LoginForm notice={error ? NOTICES[error] : undefined} />
         <p className="mt-6 text-center text-xs text-ink-3">
           ¿Olvidaste tu contraseña? Pídele al administrador que te asigne una nueva.
         </p>
         <LegalFooter className="mt-5" />
       </div>
-      <CookieNotice />
     </main>
   );
 }
