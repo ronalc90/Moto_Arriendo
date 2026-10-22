@@ -9,6 +9,6 @@ psql -v ON_ERROR_STOP=1 -q -d "$DB" -f supabase/tests/local_stub.sql 2>/dev/null
 for f in supabase/migrations/*.sql; do
   psql -v ON_ERROR_STOP=1 -q -d "$DB" -f "$f" > /dev/null
 done
-for t in supabase/tests/rls_and_balance_test.sql supabase/tests/phase2_3_test.sql supabase/tests/security_definer_test.sql supabase/tests/purge_test.sql supabase/tests/review_fixes_test.sql supabase/tests/go_live_test.sql; do psql -v ON_ERROR_STOP=1 -q -d "$DB" -f "$t" 2>&1 | grep -E "NOTICE|ERROR"; done
+for t in supabase/tests/rls_and_balance_test.sql supabase/tests/phase2_3_test.sql supabase/tests/security_definer_test.sql supabase/tests/purge_test.sql supabase/tests/review_fixes_test.sql supabase/tests/go_live_test.sql supabase/tests/documents_test.sql; do psql -v ON_ERROR_STOP=1 -q -d "$DB" -f "$t" 2>&1 | grep -E "NOTICE|ERROR"; done
 psql -q -d postgres -c "drop database $DB"
 echo "✔ Pruebas de base de datos OK"

@@ -18,7 +18,7 @@ export default async function WelcomePage() {
   const supabase = await createClient();
   const { data: driver } = await supabase
     .from("drivers")
-    .select("national_id, license_number, license_category, license_expires_on, emergency_contact_name, emergency_contact_phone")
+    .select("id, national_id, license_number, license_category, license_expires_on, emergency_contact_name, emergency_contact_phone")
     .eq("profile_id", profile.id)
     .maybeSingle();
 
@@ -34,6 +34,7 @@ export default async function WelcomePage() {
         askData={!profile.onboarded_at}
         askPassword={profile.must_change_password}
         phoneLocked={!profile.username}
+        driverId={driver?.id ?? ""}
         initial={{
           full_name: profile.full_name,
           phone: profile.phone ?? "",

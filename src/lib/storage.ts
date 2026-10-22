@@ -39,3 +39,8 @@ export function isValidUploadPath(path: string, prefix: string, extensions: stri
 
 export const IMAGE_EXT = ["jpg", "jpeg", "png", "webp"];
 export const DOC_EXT = [...IMAGE_EXT, "pdf"];
+
+/** Signed URLs for both sides of a list of documents. */
+export async function documentUrls(docs: Array<{ file_path: string | null; back_file_path?: string | null }>) {
+  return signedUrls("documents", docs.flatMap((d) => [d.file_path, d.back_file_path ?? null]));
+}

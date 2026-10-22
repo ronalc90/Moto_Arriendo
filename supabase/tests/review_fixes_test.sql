@@ -66,8 +66,9 @@ begin
     if sqlerrm like 'FAIL%' then raise; end if;
   end;
   -- own folder works, created_at is forced to now
-  insert into public.documents (entity, driver_id, doc_type, file_path)
-  values ('driver', '00000000-0000-4000-8000-0000000000d1', 'license', '00000000-0000-4000-8000-0000000000d1/lic.jpg');
+  insert into public.documents (entity, driver_id, doc_type, file_path, back_file_path)
+  values ('driver', '00000000-0000-4000-8000-0000000000d1', 'license', '00000000-0000-4000-8000-0000000000d1/lic.jpg',
+          '00000000-0000-4000-8000-0000000000d1/lic-back.jpg');
   insert into public.payments (contract_id, paid_on, total_amount, method, receipt_path, created_at)
   values ('00000000-0000-4000-8000-0000000000c1', public.bogota_today(), 160000, 'nequi',
           '00000000-0000-4000-8000-0000000000d1/r.jpg', now() - interval '10 days')

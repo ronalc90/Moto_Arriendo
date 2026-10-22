@@ -10,7 +10,13 @@
    - lee y acepta la **autorización de tratamiento de datos**;
    - llena **tus datos**: nombre completo, celular, cédula, número, categoría y vencimiento de tu
      licencia, y un contacto de emergencia;
+   - toma la foto de tu **cédula** y de tu **licencia** por los **dos lados** (frente y reverso). Ponlas sobre
+     una mesa, con buena luz y sin flash. Si la foto sale borrosa, oscura o muy lejos, la app te avisa para
+     que la tomes otra vez;
    - elige **tu propia contraseña** (mínimo 6 caracteres). Desde ese momento entras con ella.
+
+   El administrador revisa que las fotos se lean. Si alguna no sirve, te llega un aviso con el motivo y
+   la subes de nuevo en **Más → Documentos**.
 5. Ve a **Más → Avisos** y toca **Activar notificaciones** (en iPhone, abre la app desde el ícono).
 
 ## 2. Pantalla de inicio

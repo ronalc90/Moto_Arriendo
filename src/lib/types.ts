@@ -153,6 +153,9 @@ export type DocumentRow = {
   starts_on: string | null;
   expires_on: string | null;
   file_path: string | null;
+  back_file_path: string | null;
+  review_status: "pending" | "approved" | "rejected";
+  review_notes: string | null;
   notes: string | null;
   created_at: string;
 };

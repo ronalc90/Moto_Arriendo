@@ -12,7 +12,7 @@ import { LightBadge } from "@/components/traffic-light";
 import { requireAdmin } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { getOwners } from "@/lib/admin";
-import { signedUrls } from "@/lib/storage";
+import { documentUrls } from "@/lib/storage";
 import { DAMAGE_STATUS_LABEL, MOTORCYCLE_STATUS_LABEL } from "@/lib/constants";
 import { formatCOP, formatDate } from "@/lib/format";
 import type { ContractOverview, DamageReport, DocumentRow, Inspection, Motorcycle } from "@/lib/types";
@@ -40,7 +40,7 @@ export default async function MotorcycleDetailPage({ params }: PageProps<"/admin
     supabase.from("motorcycle_payback").select("income, net, remaining").eq("motorcycle_id", id).maybeSingle(),
   ]);
   const docs = (docsRes.data as DocumentRow[]) ?? [];
-  const urls = await signedUrls("documents", docs.map((d) => d.file_path));
+  const urls = await documentUrls(docs);
   const contract = contractRes.data as ContractOverview | null;
   const produced = Number(incomeRes.data?.income ?? 0);
   const net = Number(incomeRes.data?.net ?? 0);

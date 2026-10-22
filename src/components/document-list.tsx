@@ -1,4 +1,4 @@
-import { ExternalLink, FileText } from "lucide-react";
+import { FileText } from "lucide-react";
 import { Badge, Card, EmptyState } from "@/components/ui";
 import { DOC_TYPE_LABEL } from "@/lib/constants";
 import { bogotaToday, formatDate } from "@/lib/format";
@@ -35,29 +35,40 @@ export function DocumentList({
     <Card className="divide-y divide-line p-0">
       {docs.map((d) => {
         const url = d.file_path ? urls.get(d.file_path) : null;
+        const backUrl = d.back_file_path ? urls.get(d.back_file_path) : null;
         return (
           <div key={d.id} className="flex items-center gap-3 px-4 py-3">
             <FileText className="size-5 shrink-0 text-ink-3" />
             <div className="min-w-0 flex-1">
-              <p className="font-medium">{DOC_TYPE_LABEL[d.doc_type] ?? d.doc_type}</p>
+              <p className="font-medium">
+                {DOC_TYPE_LABEL[d.doc_type] ?? d.doc_type}{" "}
+                {d.review_status === "pending" ? <Badge tone="warn">En revisión</Badge> : null}
+                {d.review_status === "rejected" ? <Badge tone="bad">Rechazado</Badge> : null}
+              </p>
               <p className="text-xs text-ink-2">
                 {d.starts_on ? `Desde ${formatDate(d.starts_on)} · ` : ""}
                 {d.expires_on ? `Vence ${formatDate(d.expires_on)}` : "Sin vencimiento"}
                 {d.notes ? ` · ${d.notes}` : ""}
               </p>
+              {d.review_status === "rejected" && d.review_notes ? (
+                <p className="text-xs text-bad">Motivo: {d.review_notes}. Súbelo de nuevo.</p>
+              ) : null}
+              {url || backUrl ? (
+                <p className="mt-1 flex gap-3 text-xs font-semibold">
+                  {url ? (
+                    <a href={url} target="_blank" rel="noreferrer" className="text-info">
+                      {backUrl ? "Ver frente" : "Ver"}
+                    </a>
+                  ) : null}
+                  {backUrl ? (
+                    <a href={backUrl} target="_blank" rel="noreferrer" className="text-info">
+                      Ver reverso
+                    </a>
+                  ) : null}
+                </p>
+              ) : null}
             </div>
             <ExpiryBadge expiresOn={d.expires_on} />
-            {url ? (
-              <a
-                href={url}
-                target="_blank"
-                rel="noreferrer"
-                className="rounded-lg p-2 text-ink-2 hover:bg-surface-2"
-                aria-label="Abrir documento"
-              >
-                <ExternalLink className="size-5" />
-              </a>
-            ) : null}
             {actions?.(d)}
           </div>
         );

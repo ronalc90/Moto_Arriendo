@@ -5,6 +5,7 @@ import { getProfile, needsOnboarding } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { authPasswordError, ownPasswordProblem } from "@/lib/passwords";
 import { dbError } from "@/lib/action-state";
+import { DOC_EXT, isValidUploadPath } from "@/lib/storage";
 
 export type WelcomeState = { error?: string; values?: Record<string, string> };
 
@@ -29,8 +30,25 @@ export async function completeWelcome(_prev: WelcomeState, formData: FormData): 
   const values = Object.fromEntries(FIELDS.map((f) => [f, String(formData.get(f) ?? "").trim()]));
   const supabase = await createClient();
 
-  // 1) Own data (validated again in the database)
+  // 1) Own data (validated again in the database) + photos of cédula and license
   if (!profile.onboarded_at) {
+    const { data: driver } = await supabase.from("drivers").select("id").eq("profile_id", profile.id).single();
+    if (!driver) return { error: "No encontramos tu registro de conductor. Habla con el administrador.", values };
+    const photos = {
+      id_front: String(formData.get("id_front") ?? ""),
+      id_back: String(formData.get("id_back") ?? ""),
+      lic_front: String(formData.get("lic_front") ?? ""),
+      lic_back: String(formData.get("lic_back") ?? ""),
+    };
+    for (const [key, path] of Object.entries(photos)) {
+      if (!path) {
+        const what = key.startsWith("id") ? "la cédula" : "la licencia";
+        const side = key.endsWith("front") ? "el frente" : "el reverso";
+        return { error: `Falta la foto de ${side} de ${what}.`, values };
+      }
+      if (!isValidUploadPath(path, driver.id, DOC_EXT)) return { error: "Alguna foto no es válida. Tómala de nuevo.", values };
+    }
+
     const { error } = await supabase.rpc("complete_driver_onboarding", {
       p_full_name: values.full_name,
       p_phone: values.phone,
@@ -42,6 +60,19 @@ export async function completeWelcome(_prev: WelcomeState, formData: FormData): 
       p_emergency_contact_phone: values.emergency_contact_phone,
     });
     if (error) return { error: dbError(error, "No pudimos guardar tus datos. Revísalos e intenta de nuevo."), values };
+
+    const { error: docError } = await supabase.from("documents").insert([
+      { entity: "driver", driver_id: driver.id, doc_type: "national_id", file_path: photos.id_front, back_file_path: photos.id_back },
+      {
+        entity: "driver",
+        driver_id: driver.id,
+        doc_type: "license",
+        file_path: photos.lic_front,
+        back_file_path: photos.lic_back,
+        expires_on: values.license_expires_on || null,
+      },
+    ]);
+    if (docError) return { error: dbError(docError, "Tus datos quedaron guardados, pero no las fotos. Súbelas en Mis documentos."), values };
   }
 
   // 2) Own password, replacing the one the admin gave them

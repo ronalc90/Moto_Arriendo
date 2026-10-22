@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import { LogOut } from "lucide-react";
 import { Alert, Button, Field, Input, Select } from "@/components/ui";
+import { FileUpload } from "@/components/file-upload";
 import { completeWelcome, type WelcomeState } from "./actions";
 
 const CATEGORIES = ["A1", "A2", "B1", "B2", "B3", "C1", "C2", "C3"];
@@ -11,11 +12,13 @@ export function WelcomeForm({
   askData,
   askPassword,
   phoneLocked,
+  driverId,
   initial,
 }: {
   askData: boolean;
   askPassword: boolean;
   phoneLocked: boolean;
+  driverId: string;
   initial: Record<string, string>;
 }) {
   const [state, action, pending] = useActionState<WelcomeState, FormData>(completeWelcome, {});
@@ -71,6 +74,24 @@ export function WelcomeForm({
                 required
               />
             </Field>
+          </section>
+        ) : null}
+
+        {askData ? (
+          <section className="space-y-4 rounded-2xl border border-line bg-surface p-5">
+            <div>
+              <h2 className="font-semibold">Fotos de tus documentos</h2>
+              <p className="mt-1 text-sm text-ink-2">
+                Pon cada documento sobre una mesa, con buena luz y sin flash. Que se vea completo y se lean los números. La app
+                te avisa si la foto sale borrosa u oscura.
+              </p>
+            </div>
+            <p className="text-sm font-semibold">Cédula</p>
+            <FileUpload name="id_front" bucket="documents" folder={driverId} kind="image" capture checkQuality required label="Foto del FRENTE de la cédula" />
+            <FileUpload name="id_back" bucket="documents" folder={driverId} kind="image" capture checkQuality required label="Foto del REVERSO de la cédula" />
+            <p className="pt-2 text-sm font-semibold">Licencia de conducción</p>
+            <FileUpload name="lic_front" bucket="documents" folder={driverId} kind="image" capture checkQuality required label="Foto del FRENTE de la licencia" />
+            <FileUpload name="lic_back" bucket="documents" folder={driverId} kind="image" capture checkQuality required label="Foto del REVERSO de la licencia" />
           </section>
         ) : null}
 

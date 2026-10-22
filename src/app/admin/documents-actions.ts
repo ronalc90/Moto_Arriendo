@@ -18,8 +18,10 @@ const schema = z.object({
   starts_on: date,
   expires_on: date,
   file: z.string(),
+  back_file: z.string(),
   notes: z.string().max(300),
 });
+const TWO_SIDED = ["national_id", "license"];
 
 /** Admin adds a document (with expiry date) to a motorcycle or a driver. */
 export async function addDocument(_prev: ActionState, formData: FormData): Promise<ActionState> {
@@ -31,12 +33,17 @@ export async function addDocument(_prev: ActionState, formData: FormData): Promi
     starts_on: String(formData.get("starts_on") ?? ""),
     expires_on: String(formData.get("expires_on") ?? ""),
     file: String(formData.get("file") ?? ""),
+    back_file: String(formData.get("back_file") ?? ""),
     notes: String(formData.get("notes") ?? ""),
   });
   if (!parsed.success) return fail(parsed.error.issues[0]?.message ?? "Revisa los datos");
   const d = parsed.data;
   const prefix = d.entity === "motorcycle" ? `moto/${d.entity_id}` : d.entity_id;
   if (d.file && !isValidUploadPath(d.file, prefix, DOC_EXT)) return fail("El archivo no es válido.");
+  if (d.back_file && !isValidUploadPath(d.back_file, prefix, DOC_EXT)) return fail("El archivo del reverso no es válido.");
+  if (TWO_SIDED.includes(d.doc_type) && (!d.file || !d.back_file)) {
+    return fail("Sube la foto de los dos lados (frente y reverso).");
+  }
   if (!d.file && !d.expires_on) return fail("Sube el archivo o al menos registra la fecha de vencimiento.");
   if (["soat", "insurance", "tech_inspection"].includes(d.doc_type) && !d.expires_on) {
     return fail("Este documento necesita fecha de vencimiento para avisarte a tiempo.");
@@ -52,6 +59,7 @@ export async function addDocument(_prev: ActionState, formData: FormData): Promi
     starts_on: d.starts_on || null,
     expires_on: d.expires_on || null,
     file_path: d.file || null,
+    back_file_path: d.back_file || null,
     notes: d.notes || null,
   });
   if (error) return fail(dbError(error));
@@ -70,23 +78,42 @@ export async function deleteDocument(_prev: ActionState, formData: FormData): Pr
   const supabase = await createClient();
   const { data: doc } = await supabase
     .from("documents")
-    .select("file_path, entity, driver_id, motorcycle_id")
+    .select("file_path, back_file_path, entity, driver_id, motorcycle_id")
     .eq("id", id)
     .maybeSingle();
   const { error } = await supabase.from("documents").delete().eq("id", id);
   if (error) return fail(dbError(error));
   // Remove the file only when it lives in this document's own folder and no
   // other row still points to it (never trust a path someone else wrote).
-  if (doc?.file_path) {
+  if (doc) {
     const owner = doc.entity === "motorcycle" ? `moto/${doc.motorcycle_id}/` : `${doc.driver_id}/`;
-    const { count } = await supabase
-      .from("documents")
-      .select("id", { count: "exact", head: true })
-      .eq("file_path", doc.file_path);
-    if (doc.file_path.startsWith(owner) && !doc.file_path.includes("..") && (count ?? 0) === 0) {
-      await supabase.storage.from("documents").remove([doc.file_path]);
+    for (const path of [doc.file_path, doc.back_file_path]) {
+      if (!path || !path.startsWith(owner) || path.includes("..")) continue;
+      const { count } = await supabase
+        .from("documents")
+        .select("id", { count: "exact", head: true })
+        .or(`file_path.eq.${path},back_file_path.eq.${path}`);
+      if ((count ?? 0) === 0) await supabase.storage.from("documents").remove([path]);
     }
   }
   revalidatePath("/admin", "layout");
   return done("Documento eliminado.");
+}
+
+/** Admin checks a document a driver uploaded: approve, or reject with a reason. */
+export async function reviewDocument(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  await requireAdmin();
+  const id = String(formData.get("id") ?? "");
+  const decision = String(formData.get("decision") ?? "");
+  const notes = String(formData.get("review_notes") ?? "").trim();
+  if (!["approved", "rejected"].includes(decision)) return fail("Elige aprobar o rechazar.");
+  if (decision === "rejected" && notes.length < 3) return fail("Escribe por qué la rechazas (el conductor lo verá).");
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("documents")
+    .update({ review_status: decision, review_notes: decision === "rejected" ? notes : null })
+    .eq("id", id);
+  if (error) return fail(dbError(error));
+  revalidatePath("/admin", "layout");
+  return done(decision === "approved" ? "Documento aprobado." : "Rechazado: le avisamos al conductor para que lo suba de nuevo.");
 }

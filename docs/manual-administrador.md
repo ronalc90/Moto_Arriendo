@@ -43,6 +43,7 @@ que lo completes.
 | Subir o bajar la tarifa diaria | Contratos → abre el contrato → Cambiar tarifa (desde una fecha; lo anterior no cambia) |
 | Prestarle más plata a un conductor | Préstamos → abre su préstamo → Editar préstamo (súmale el monto) |
 | Cobrar por WhatsApp | Conductores → abre al conductor → botón WhatsApp |
+| Revisar la cédula o la licencia que subió un conductor | Hoy → Pendientes por llenar, o Conductores → abre al conductor → Documentos: **Se lee bien** o **No se lee** (escribe el motivo; al conductor le llega el aviso) |
 | Asignar una contraseña nueva | Conductores → abre al conductor → Asignar nueva contraseña |
 | Registrar un cambio de aceite o un arreglo | Motos → abre la moto → Registrar servicio o arreglo |
 | Registrar una multa, accidente, inmovilización o robo | Incidentes → Nuevo incidente |

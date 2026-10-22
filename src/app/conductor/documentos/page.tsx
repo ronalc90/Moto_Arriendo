@@ -2,11 +2,11 @@ import type { Metadata } from "next";
 import { ExternalLink } from "lucide-react";
 import { ActionForm } from "@/components/action-form";
 import { DocumentList } from "@/components/document-list";
-import { FileUpload } from "@/components/file-upload";
-import { Card, Field, Input, SectionTitle, Select } from "@/components/ui";
+import { DocumentUploadFields } from "@/components/document-upload-fields";
+import { Alert, Card, SectionTitle } from "@/components/ui";
 import { getDriverContext } from "@/lib/driver";
 import { createClient } from "@/lib/supabase/server";
-import { signedUrl, signedUrls } from "@/lib/storage";
+import { documentUrls, signedUrl } from "@/lib/storage";
 import { formatCOP, formatDate, formatTime, WEEKDAYS } from "@/lib/format";
 import type { DocumentRow } from "@/lib/types";
 import { uploadMyDocument } from "./actions";
@@ -19,8 +19,11 @@ export default async function DriverDocumentsPage() {
   const { data } = await supabase.from("documents").select("*").order("created_at", { ascending: false });
   const docs = (data as DocumentRow[]) ?? [];
   const mine = docs.filter((d) => d.entity === "driver");
+  const hasBoth = (type: string) =>
+    mine.some((d) => d.doc_type === type && d.review_status !== "rejected" && d.back_file_path);
+  const missing = [!hasBoth("national_id") ? "tu cédula" : null, !hasBoth("license") ? "tu licencia" : null].filter(Boolean);
   const moto = docs.filter((d) => d.entity === "motorcycle");
-  const urls = await signedUrls("documents", docs.map((d) => d.file_path));
+  const urls = await documentUrls(docs);
   const contractUrl = ctx.contract?.file_path ? await signedUrl("contracts", ctx.contract.file_path) : null;
 
   return (
@@ -64,23 +67,19 @@ export default async function DriverDocumentsPage() {
       <DocumentList docs={moto} urls={urls} empty="Aún no hay documentos de la moto." />
 
       <SectionTitle>Mis documentos</SectionTitle>
+      {missing.length ? (
+        <div className="mb-3">
+          <Alert tone="warn">
+            Falta la foto de {missing.join(" y ")} por los dos lados (frente y reverso). Súbela abajo.
+          </Alert>
+        </div>
+      ) : null}
       <DocumentList docs={mine} urls={urls} empty="Aún no has subido documentos." />
 
       <SectionTitle>Subir un documento</SectionTitle>
       <Card>
         <ActionForm action={uploadMyDocument} submitLabel="Guardar documento" resetOnSuccess>
-          <Field label="Tipo" htmlFor="doc_type">
-            <Select id="doc_type" name="doc_type" defaultValue="license">
-              <option value="license">Licencia de conducción</option>
-              <option value="national_id">Cédula</option>
-              <option value="background_check">Antecedentes</option>
-              <option value="other">Otro</option>
-            </Select>
-          </Field>
-          <Field label="Fecha de vencimiento (si tiene)" htmlFor="expires_on">
-            <Input id="expires_on" name="expires_on" type="date" />
-          </Field>
-          <FileUpload name="file" bucket="documents" folder={ctx.driver.id} kind="document" capture label="Foto o PDF del documento" />
+          <DocumentUploadFields types={["national_id", "license", "background_check", "other"]} folder={ctx.driver.id} idPrefix="mydoc" />
         </ActionForm>
       </Card>
     </>

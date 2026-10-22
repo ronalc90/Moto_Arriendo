@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
-import { Camera, FileText, Loader2, RefreshCw, Upload } from "lucide-react";
+import { AlertTriangle, Camera, FileText, Loader2, RefreshCw, Upload } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { compressImage, randomName } from "@/lib/image";
+import { assessDocumentPhoto, compressImage, randomName } from "@/lib/image";
 import { cx } from "@/components/ui";
 import { MAX_DOC_BYTES, MAX_IMAGE_BYTES } from "@/lib/constants";
 
@@ -30,6 +30,7 @@ export function FileUpload({
   hint,
   required,
   big = false,
+  checkQuality = false,
   onChange,
 }: {
   name: string;
@@ -41,6 +42,8 @@ export function FileUpload({
   hint?: string;
   required?: boolean;
   big?: boolean;
+  /** Check that a photo of a document is sharp, bright enough and big enough. */
+  checkQuality?: boolean;
   onChange?: (path: string | null) => void;
 }) {
   const id = useId();
@@ -50,10 +53,12 @@ export function FileUpload({
   const [fileName, setFileName] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [warning, setWarning] = useState<{ file: File; problems: string[] } | null>(null);
 
-  async function handle(file: File | undefined) {
+  async function handle(file: File | undefined, skipCheck = false) {
     if (!file) return;
     setError(null);
+    setWarning(null);
     const isPdf = file.type === "application/pdf";
     if (kind === "image" && !file.type.startsWith("image/")) {
       setError("Solo se permiten fotos (JPG o PNG).");
@@ -65,11 +70,19 @@ export function FileUpload({
     }
     setBusy(true);
     try {
+      if (checkQuality && !isPdf && !skipCheck) {
+        const problems = await assessDocumentPhoto(file).catch(() => []);
+        if (problems.length) {
+          setWarning({ file, problems });
+          return;
+        }
+      }
       let body: Blob = file;
       let ext = "pdf";
       let contentType = "application/pdf";
       if (!isPdf) {
-        body = await compressImage(file);
+        // Documents keep more detail so the small print stays readable.
+        body = kind === "document" || checkQuality ? await compressImage(file, 2000, 0.88) : await compressImage(file);
         ext = "jpg";
         contentType = "image/jpeg";
       }
@@ -160,6 +173,33 @@ export function FileUpload({
           {busy ? "Subiendo…" : label}
         </label>
       )}
+      {warning ? (
+        <div className="space-y-2 rounded-2xl border border-warn/50 bg-warn-soft/50 p-3 text-sm">
+          <p className="flex items-center gap-2 font-semibold text-warn">
+            <AlertTriangle className="size-4" /> Puede que no se lea bien
+          </p>
+          <ul className="list-disc space-y-0.5 pl-5 text-ink-2">
+            {warning.problems.map((p) => (
+              <li key={p}>{p}</li>
+            ))}
+          </ul>
+          <div className="flex flex-wrap gap-2 pt-1">
+            <label
+              htmlFor={id}
+              className="cursor-pointer rounded-xl bg-brand px-3 py-2 font-semibold text-brand-ink hover:bg-brand-strong"
+            >
+              Tomar otra foto
+            </label>
+            <button
+              type="button"
+              onClick={() => handle(warning.file, true)}
+              className="rounded-xl px-3 py-2 font-medium text-ink-2 hover:bg-surface-2"
+            >
+              Se lee bien, usarla
+            </button>
+          </div>
+        </div>
+      ) : null}
       {error ? <p className="text-sm text-bad">{error}</p> : hint ? <p className="text-xs text-ink-3">{hint}</p> : null}
     </div>
   );

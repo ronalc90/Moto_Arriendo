@@ -7,11 +7,12 @@ import { AdminDocumentForm } from "@/components/admin-document-form";
 import { Collapsible } from "@/components/collapsible";
 import { DeleteButton } from "@/components/delete-button";
 import { DocumentList } from "@/components/document-list";
+import { ReviewDocument } from "@/components/review-document";
 import { Alert, Badge, ButtonLink, Card, EmptyState, Field, Input, PageHeader, SectionTitle, Stat, buttonClass } from "@/components/ui";
 import { LightBadge } from "@/components/traffic-light";
 import { requireAdmin } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import { signedUrls } from "@/lib/storage";
+import { documentUrls } from "@/lib/storage";
 import { PAYMENT_METHOD_LABEL, PAYMENT_STATUS_LABEL } from "@/lib/constants";
 import { formatCOP, formatDate, formatDateTime, formatPhone } from "@/lib/format";
 import { reminderText, whatsappLink } from "@/lib/whatsapp";
@@ -64,7 +65,7 @@ export default async function DriverDetailPage({ params, searchParams }: PagePro
   const activeLoan = loans.find((l) => l.status === "active");
   const payments = (paymentsRes.data as Array<Payment & { motorcycles: { plate: string } }>) ?? [];
   const docs = (docsRes.data as DocumentRow[]) ?? [];
-  const urls = await signedUrls("documents", docs.map((d) => d.file_path));
+  const urls = await documentUrls(docs);
   const wa = whatsappLink(driver.profiles.phone, reminderText(driver.profiles.full_name, o?.total_debt ?? 0, o?.late_days ?? 0));
 
   return (
@@ -226,7 +227,12 @@ export default async function DriverDetailPage({ params, searchParams }: PagePro
         docs={docs}
         urls={urls}
         empty="Sin documentos."
-        actions={(d) => <DeleteButton action={deleteDocument} id={d.id} />}
+        actions={(d) => (
+          <div className="flex flex-col items-end gap-1">
+            {d.review_status === "pending" ? <ReviewDocument id={d.id} /> : null}
+            <DeleteButton action={deleteDocument} id={d.id} />
+          </div>
+        )}
       />
       <div className="mt-3 space-y-3">
         <Collapsible title="Agregar documento (licencia, cédula, antecedentes…)">
