@@ -29,11 +29,17 @@ siempre en **America/Bogota**.
 Contrato desde el lunes 28/09/2026, descanso domingo, $40.000/día. El miércoles 21/10/2026 a las
 10:00 p. m. hay 24 días, menos 3 domingos = **21 días cobrables → $840.000**.
 Si el conductor tiene aprobados $760.000, debe $80.000 → **2 días de atraso → 🟡**.
+
+El atraso se calcula solo con pagos **aprobados**. Si el conductor ya subió pagos que cubren la deuda y están
+esperando tu revisión, la app **no** le manda el aviso de atraso (ni a ti) hasta que los revises.
 A las 8:00 p. m. del mismo día (antes de la hora límite) serían 20 días → $40.000 → 1 día.
 
 ## 2. Préstamos y abonos
 
 - Cada préstamo tiene: concepto, monto, **abono diario** y si el abono es **obligatorio** (por defecto sí).
+- Cada conductor tiene **un solo préstamo activo** a la vez. Si le prestas más plata, abre su préstamo y en
+  **Editar préstamo** súmale el nuevo monto (y, si quieres, sube el abono diario). Así cada pago va completo a
+  ese préstamo y el conductor nunca queda en mora por pagar exactamente lo que la app le pide.
 - Obligatorio: el abono que no se pague suma deuda y mueve el semáforo.
 - Voluntario: el abono se sugiere, pero no afecta el semáforo.
 - **Saldo del préstamo** = monto − abonos aprobados. Cuando llega a 0 el préstamo pasa a **pagado**
@@ -46,7 +52,7 @@ Cuando el conductor sube un pago, la base de datos reparte el monto (el conducto
 
 1. Primero a la **tarifa** que debe hasta hoy (contando también pagos en revisión). Si no debe nada,
    un día de tarifa (pago del día).
-2. Lo que sobre va al **abono del préstamo** más antiguo, hasta su saldo.
+2. Lo que sobre va al **abono del préstamo** activo, hasta su saldo.
 3. Si aún sobra, queda como **adelanto de tarifa** de los días siguientes.
 
 El monto sugerido en el formulario es: tarifa pendiente hasta hoy (o la de un día) + abono pendiente

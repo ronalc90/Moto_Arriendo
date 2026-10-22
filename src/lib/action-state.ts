@@ -24,6 +24,9 @@ export function dbError(error: { message?: string; code?: string } | null | unde
     if (msg.includes("one_active_per_driver")) return "Ese conductor ya tiene un contrato vigente.";
     if (msg.includes("one_active_per_motorcycle")) return "Esa moto ya tiene un contrato vigente.";
     if (msg.includes("exempt_days")) return "Ese día ya está marcado como exento.";
+    if (msg.includes("loans_one_active_per_driver")) {
+      return "Este conductor ya tiene un préstamo activo. Edítalo para sumarle el nuevo monto.";
+    }
     return "Ese registro ya existe.";
   }
   if (error.code === "42501" || /row-level security/i.test(msg)) return "No tienes permiso para hacer esto.";

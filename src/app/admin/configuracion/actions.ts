@@ -142,7 +142,7 @@ async function removeOrphanFolders(supabase: Supa) {
       if (!driverIds.has(id)) await emptyFolder(supabase, bucket, id);
     }
   }
-  for (const parent of ["moto", "incidents"]) {
+  for (const parent of ["moto", "incidents", "expenses"]) {
     for (const id of await uuidFolders(supabase, "documents", parent)) {
       if (!motoIds.has(id)) await emptyFolder(supabase, "documents", `${parent}/${id}`);
     }

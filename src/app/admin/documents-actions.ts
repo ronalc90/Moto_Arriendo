@@ -68,10 +68,25 @@ export async function deleteDocument(_prev: ActionState, formData: FormData): Pr
   await requireAdmin();
   const id = String(formData.get("id") ?? "");
   const supabase = await createClient();
-  const { data: doc } = await supabase.from("documents").select("file_path").eq("id", id).maybeSingle();
+  const { data: doc } = await supabase
+    .from("documents")
+    .select("file_path, entity, driver_id, motorcycle_id")
+    .eq("id", id)
+    .maybeSingle();
   const { error } = await supabase.from("documents").delete().eq("id", id);
   if (error) return fail(dbError(error));
-  if (doc?.file_path) await supabase.storage.from("documents").remove([doc.file_path]);
+  // Remove the file only when it lives in this document's own folder and no
+  // other row still points to it (never trust a path someone else wrote).
+  if (doc?.file_path) {
+    const owner = doc.entity === "motorcycle" ? `moto/${doc.motorcycle_id}/` : `${doc.driver_id}/`;
+    const { count } = await supabase
+      .from("documents")
+      .select("id", { count: "exact", head: true })
+      .eq("file_path", doc.file_path);
+    if (doc.file_path.startsWith(owner) && !doc.file_path.includes("..") && (count ?? 0) === 0) {
+      await supabase.storage.from("documents").remove([doc.file_path]);
+    }
+  }
   revalidatePath("/admin", "layout");
   return done("Documento eliminado.");
 }

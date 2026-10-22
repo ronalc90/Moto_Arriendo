@@ -31,6 +31,19 @@ export async function createLoan(_prev: ActionState, formData: FormData): Promis
   });
   if (!parsed.success) return fail(parsed.error.issues[0]?.message ?? "Revisa los datos");
   const supabase = await createClient();
+  // One active loan per driver (a payment can only pay one loan). Point the
+  // admin to the existing loan so they can add the new amount to it.
+  const { data: active } = await supabase
+    .from("loans")
+    .select("id, concept")
+    .eq("driver_id", parsed.data.driver_id)
+    .eq("status", "active")
+    .maybeSingle();
+  if (active) {
+    return fail(
+      `Este conductor ya tiene un préstamo activo (${active.concept}). Ábrelo y usa "Editar préstamo" para sumarle el nuevo monto.`,
+    );
+  }
   const { data, error } = await supabase
     .from("loans")
     .insert({ ...parsed.data, notes: parsed.data.notes || null })

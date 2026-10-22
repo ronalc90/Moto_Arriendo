@@ -29,7 +29,7 @@ export async function createExpense(_prev: ActionState, formData: FormData): Pro
     });
   if (!parsed.success) return fail(parsed.error.issues[0]?.message ?? "Revisa los datos");
   const d = parsed.data;
-  if (d.file && !isValidUploadPath(d.file, `moto/${d.motorcycle_id}`, DOC_EXT)) return fail("El soporte no es válido.");
+  if (d.file && !isValidUploadPath(d.file, `expenses/${d.motorcycle_id}`, DOC_EXT)) return fail("El soporte no es válido.");
   const supabase = await createClient();
   const { error } = await supabase.from("expenses").insert({
     motorcycle_id: d.motorcycle_id,

@@ -130,7 +130,7 @@ export async function MaintenanceSection({ motorcycleId, currentKm }: { motorcyc
             <Field label="Detalle" htmlFor="description">
               <Input id="description" name="description" placeholder="Ej: cambio de aceite 20W50 y filtro" />
             </Field>
-            <FileUpload name="invoice" bucket="documents" folder={`moto/${motorcycleId}`} kind="document" label="Factura (foto o PDF)" />
+            <FileUpload name="invoice" bucket="documents" folder={`expenses/${motorcycleId}`} kind="document" label="Factura (foto o PDF)" />
           </ActionForm>
         </Collapsible>
       </div>

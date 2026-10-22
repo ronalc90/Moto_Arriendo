@@ -44,7 +44,7 @@ export function ExpenseForm({ motos, today }: { motos: { value: string; label: s
         <Input id="description" name="description" placeholder="Ej: SOAT 2026-2027" />
       </Field>
       {moto ? (
-        <FileUpload key={moto} name="file" bucket="documents" folder={`moto/${moto}`} kind="document" label="Soporte (opcional)" />
+        <FileUpload key={moto} name="file" bucket="documents" folder={`expenses/${moto}`} kind="document" label="Soporte (opcional)" />
       ) : null}
     </ActionForm>
   );

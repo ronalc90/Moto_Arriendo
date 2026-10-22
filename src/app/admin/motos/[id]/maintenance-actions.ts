@@ -35,7 +35,7 @@ export async function addMaintenance(_prev: ActionState, formData: FormData): Pr
   });
   if (!parsed.success) return fail(parsed.error.issues[0]?.message ?? "Revisa los datos");
   const d = parsed.data;
-  if (d.invoice && !isValidUploadPath(d.invoice, `moto/${d.motorcycle_id}`, DOC_EXT)) return fail("La factura no es válida.");
+  if (d.invoice && !isValidUploadPath(d.invoice, `expenses/${d.motorcycle_id}`, DOC_EXT)) return fail("La factura no es válida.");
 
   const supabase = await createClient();
   const { error } = await supabase.from("maintenance_records").insert({

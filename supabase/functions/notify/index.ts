@@ -93,11 +93,15 @@ Deno.serve(async (req) => {
     }
   }
 
-  const pushed: string[] = [];
-  const emailed: string[] = [];
+  let pushed = 0;
+  let emailed = 0;
   const dead = new Set<string>();
+  const started = Date.now();
 
   for (const n of pending) {
+    // Stay well inside the function's time limit; the rest goes in the next run.
+    if (Date.now() - started > 40_000) break;
+    const done: { push_sent_at?: string; email_sent_at?: string } = {};
     // Web push (marked as handled even when the user has no subscription)
     if (!n.push_sent_at) {
       const subs = subsByProfile.get(n.profile_id) ?? [];
@@ -108,7 +112,7 @@ Deno.serve(async (req) => {
               await webpush.sendNotification(
                 { endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } },
                 JSON.stringify({ title: n.title, body: n.body, url: n.url ?? "/", tag: n.id }),
-                { TTL: 60 * 60 * 12 },
+                { TTL: 60 * 60 * 12, timeout: 5000 }, // never let one slow endpoint stall the run
               );
             } catch (e) {
               const code = (e as { statusCode?: number }).statusCode;
@@ -118,7 +122,8 @@ Deno.serve(async (req) => {
           }),
         );
       }
-      pushed.push(n.id);
+      done.push_sent_at = new Date().toISOString();
+      pushed++;
     }
 
     // E-mail only for admins with a real address, when Resend is configured
@@ -138,22 +143,31 @@ Deno.serve(async (req) => {
               <a href="${link}" style="background:#ffc21a;color:#16181b;padding:10px 16px;border-radius:10px;text-decoration:none;font-weight:600">Abrir Moto Arriendo</a>
             </div>`,
           }),
+          signal: AbortSignal.timeout(8000),
+        }).catch((e) => {
+          console.error("email", (e as Error).message);
+          return null;
         });
-        if (res.ok) emailed.push(n.id);
-        else console.error("email", res.status, await res.text());
+        if (res?.ok) {
+          done.email_sent_at = new Date().toISOString();
+          emailed++;
+        } else if (res) console.error("email", res.status, await res.text());
       } else {
-        emailed.push(n.id); // nothing to send for this channel
+        done.email_sent_at = new Date().toISOString(); // nothing to send for this channel
       }
+    }
+
+    // Mark each notification as soon as it is handled, so a later failure or
+    // timeout never makes us send it twice.
+    if (done.push_sent_at || done.email_sent_at) {
+      await supabase.from("notifications").update(done).eq("id", n.id);
     }
   }
 
-  const now = new Date().toISOString();
-  if (pushed.length) await supabase.from("notifications").update({ push_sent_at: now }).in("id", pushed);
-  if (emailed.length) await supabase.from("notifications").update({ email_sent_at: now }).in("id", emailed);
   if (dead.size) await supabase.from("push_subscriptions").delete().in("endpoint", [...dead]);
 
   return new Response(
-    JSON.stringify({ created, pushed: pushed.length, emailed: emailed.length, removed_subscriptions: dead.size }),
+    JSON.stringify({ created, pushed, emailed, removed_subscriptions: dead.size }),
     { headers: { "Content-Type": "application/json" } },
   );
 });

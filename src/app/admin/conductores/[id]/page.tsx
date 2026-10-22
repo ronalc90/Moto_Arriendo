@@ -50,6 +50,8 @@ export default async function DriverDetailPage({ params, searchParams }: PagePro
   ]);
   const o = overviewRes.data as ContractOverview | null;
   const loans = (loansRes.data as LoanBalance[]) ?? [];
+  // Only one active loan per driver: more money is added to that loan.
+  const activeLoan = loans.find((l) => l.status === "active");
   const payments = (paymentsRes.data as Array<Payment & { motorcycles: { plate: string } }>) ?? [];
   const docs = (docsRes.data as DocumentRow[]) ?? [];
   const urls = await signedUrls("documents", docs.map((d) => d.file_path));
@@ -136,9 +138,15 @@ export default async function DriverDetailPage({ params, searchParams }: PagePro
 
       <SectionTitle
         action={
-          <Link href={`/admin/prestamos/nuevo?conductor=${id}`} className="text-sm font-medium text-info">
-            + Nuevo préstamo
-          </Link>
+          activeLoan ? (
+            <Link href={`/admin/prestamos/${activeLoan.id}`} className="text-sm font-medium text-info">
+              Sumar al préstamo activo
+            </Link>
+          ) : (
+            <Link href={`/admin/prestamos/nuevo?conductor=${id}`} className="text-sm font-medium text-info">
+              + Nuevo préstamo
+            </Link>
+          )
         }
       >
         Préstamos

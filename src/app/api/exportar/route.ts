@@ -6,6 +6,23 @@ import { EXPENSE_CATEGORY_LABEL, PAYMENT_METHOD_LABEL, PAYMENT_STATUS_LABEL } fr
 import { bogotaToday } from "@/lib/format";
 
 const COP = '"$"#,##0';
+const PAGE = 1000; // Supabase returns at most 1.000 rows per request
+
+/**
+ * Reads every row by pages. A plain select silently stops at the API row
+ * limit, which would leave the newest data out of the Excel without warning.
+ */
+async function fetchAll<T>(
+  page: (from: number, to: number) => PromiseLike<{ data: unknown[] | null; error: { message: string } | null }>,
+): Promise<{ rows: T[]; error: string | null }> {
+  const rows: T[] = [];
+  for (let from = 0; ; from += PAGE) {
+    const { data, error } = await page(from, from + PAGE - 1);
+    if (error) return { rows, error: error.message };
+    rows.push(...((data ?? []) as T[]));
+    if (!data || data.length < PAGE) return { rows, error: null };
+  }
+}
 
 function toDate(iso: string | null) {
   if (!iso) return null;
@@ -29,15 +46,18 @@ export async function GET(request: NextRequest) {
   wb.created = new Date();
 
   if (tipo === "pagos") {
-    let q = supabase
-      .from("payments")
-      .select(
-        "paid_on, created_at, total_amount, rate_amount, installment_amount, method, status, rejection_reason, reviewed_at, motorcycles!inner(plate, owner_id, profiles!motorcycles_owner_id_fkey(full_name)), drivers!inner(national_id, profiles!inner(full_name))",
-      )
-      .order("paid_on");
-    if (moto) q = q.eq("motorcycle_id", moto);
-    const { data, error } = await q;
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    const { rows: data, error } = await fetchAll((from, to) => {
+      let q = supabase
+        .from("payments")
+        .select(
+          "paid_on, created_at, total_amount, rate_amount, installment_amount, method, status, rejection_reason, reviewed_at, motorcycles!inner(plate, owner_id, profiles!motorcycles_owner_id_fkey(full_name)), drivers!inner(national_id, profiles!inner(full_name))",
+        )
+        .order("paid_on")
+        .order("id");
+      if (moto) q = q.eq("motorcycle_id", moto);
+      return q.range(from, to);
+    });
+    if (error) return NextResponse.json({ error }, { status: 500 });
     const ws = wb.addWorksheet("Pagos");
     ws.columns = [
       { header: "Fecha de pago", key: "paid_on", width: 14, style: { numFmt: "dd/mm/yyyy" } },
@@ -78,10 +98,22 @@ export async function GET(request: NextRequest) {
       });
     }
   } else {
-    let q = supabase.from("motorcycle_costs").select("*").order("cost_date");
-    if (moto) q = q.eq("motorcycle_id", moto);
-    const [{ data, error }, { data: motos }] = await Promise.all([q, supabase.from("motorcycles").select("id, plate")]);
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    const [{ rows: data, error }, { data: motos }] = await Promise.all([
+      fetchAll((from, to) => {
+        let q = supabase
+          .from("motorcycle_costs")
+          .select("*")
+          .order("cost_date")
+          .order("motorcycle_id")
+          .order("source")
+          .order("amount")
+          .order("description");
+        if (moto) q = q.eq("motorcycle_id", moto);
+        return q.range(from, to);
+      }),
+      supabase.from("motorcycles").select("id, plate"),
+    ]);
+    if (error) return NextResponse.json({ error }, { status: 500 });
     const plate = new Map((motos ?? []).map((m) => [m.id, m.plate]));
     const ws = wb.addWorksheet("Gastos");
     ws.columns = [
@@ -153,10 +185,11 @@ async function fullBackup() {
   const wb = new ExcelJS.Workbook();
   wb.creator = "Moto Arriendo";
   for (const [sheet, table] of tables) {
-    const { data, error } = await supabase.from(table).select("*").limit(50000);
-    if (error) return NextResponse.json({ error: `${table}: ${error.message}` }, { status: 500 });
+    const { rows, error } = await fetchAll<Record<string, unknown>>((from, to) =>
+      supabase.from(table).select("*").order("id").range(from, to),
+    );
+    if (error) return NextResponse.json({ error: `${table}: ${error}` }, { status: 500 });
     const ws = wb.addWorksheet(sheet);
-    const rows = (data ?? []) as Record<string, unknown>[];
     const keys = rows.length ? Object.keys(rows[0]) : ["(sin datos)"];
     ws.columns = keys.map((k) => ({ header: k, key: k, width: Math.min(40, Math.max(12, k.length + 4)) }));
     for (const r of rows) {

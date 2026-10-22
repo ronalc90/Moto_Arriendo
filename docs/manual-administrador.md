@@ -13,7 +13,8 @@ a la izquierda; en el celular abajo (y el resto en **Más**).
    licencia, cédula y antecedentes.
 4. **Contratos → Nuevo contrato**: conductor, moto, tarifa, día de descanso, fecha de inicio y el PDF
    firmado.
-5. **Préstamos → Nuevo préstamo** (si aplica): monto, abono diario y si el abono es obligatorio.
+5. **Préstamos → Nuevo préstamo** (si aplica): monto, abono diario y si el abono es obligatorio. Cada
+   conductor tiene un solo préstamo activo: si le prestas más, edita el que ya tiene y súmale el monto.
 6. Entrégale al conductor su celular y contraseña y el enlace de la app (ver *Manual del conductor*).
 
 ## El día a día: pantalla **Hoy**
