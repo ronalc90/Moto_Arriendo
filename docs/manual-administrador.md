@@ -5,17 +5,24 @@ a la izquierda; en el celular abajo (y el resto en **Más**).
 
 ## Puesta en marcha del piloto (orden recomendado)
 
-1. **Configuración**: revisa tarifa por defecto ($40.000), abono ($10.000), día de inspección (lunes),
-   hora del recordatorio (7:00 p. m.) e intervalos de mantenimiento. Activa las notificaciones.
+1. **Configuración**: revisa la tarifa diaria por defecto ($40.000), los valores por defecto de los
+   préstamos (concepto, abono diario y si es obligatorio), el día de inspección (lunes), la hora del
+   recordatorio (7:00 p. m.) y los intervalos de mantenimiento. Activa las notificaciones.
 2. **Motos → Nueva moto**: placa, valor y fecha de compra (sirven para el reporte de recuperación y la
    técnico-mecánica). Sube **SOAT**, **seguro** y **tarjeta de propiedad** con su fecha de vencimiento.
-3. **Conductores → Nuevo conductor**: celular (será su usuario) y una contraseña inicial. Sube su
-   licencia, cédula y antecedentes.
+3. **Conductores → Nuevo conductor**: solo el **nombre**, un **usuario** (ej: `hamer`) o su celular, y una
+   **contraseña inicial** (mínimo 4 caracteres). La primera vez que entre, la app le pide sus datos
+   (cédula, licencia, contacto de emergencia) y que cambie la contraseña por una propia. Tú subes luego
+   la foto de su licencia, cédula y antecedentes.
 4. **Contratos → Nuevo contrato**: conductor, moto, tarifa, día de descanso, fecha de inicio y el PDF
    firmado.
 5. **Préstamos → Nuevo préstamo** (si aplica): monto, abono diario y si el abono es obligatorio. Cada
    conductor tiene un solo préstamo activo: si le prestas más, edita el que ya tiene y súmale el monto.
-6. Entrégale al conductor su celular y contraseña y el enlace de la app (ver *Manual del conductor*).
+6. Entrégale al conductor su usuario, la contraseña inicial y el enlace de la app (ver *Manual del conductor*).
+
+Mientras falte algo (la moto o el contrato de un conductor, el SOAT o el seguro de una moto, el contrato
+firmado), lo verás arriba en **Hoy → Pendientes por llenar** y te llega un aviso 📝 cada semana hasta
+que lo completes.
 
 ## El día a día: pantalla **Hoy**
 
@@ -33,6 +40,8 @@ a la izquierda; en el celular abajo (y el resto en **Más**).
 | Anular un pago aprobado por error | Abre el pago → Anular pago (con motivo) |
 | No cobrar unos días (moto en taller por garantía) | Días exentos, o dentro del contrato |
 | Ver el calendario de un conductor | Contratos → abre el contrato |
+| Subir o bajar la tarifa diaria | Contratos → abre el contrato → Cambiar tarifa (desde una fecha; lo anterior no cambia) |
+| Prestarle más plata a un conductor | Préstamos → abre su préstamo → Editar préstamo (súmale el monto) |
 | Cobrar por WhatsApp | Conductores → abre al conductor → botón WhatsApp |
 | Asignar una contraseña nueva | Conductores → abre al conductor → Asignar nueva contraseña |
 | Registrar un cambio de aceite o un arreglo | Motos → abre la moto → Registrar servicio o arreglo |

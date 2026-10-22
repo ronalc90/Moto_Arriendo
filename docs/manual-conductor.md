@@ -4,8 +4,13 @@
 
 1. Abre **https://moto-arriendo.vercel.app** en el celular.
 2. **Android (Chrome):** menú ⋮ → **Instalar app**. **iPhone (Safari):** botón Compartir → **Agregar a inicio**.
-3. Entra con tu **número de celular** (10 dígitos) y la **contraseña** que te dio el administrador.
-4. La primera vez lee y acepta la **autorización de tratamiento de datos**.
+3. Entra con el **usuario** que te dio el administrador (por ejemplo `hamer`, o tu celular) y la
+   **contraseña inicial**.
+4. La primera vez:
+   - lee y acepta la **autorización de tratamiento de datos**;
+   - llena **tus datos**: nombre completo, celular, cédula, número, categoría y vencimiento de tu
+     licencia, y un contacto de emergencia;
+   - elige **tu propia contraseña** (mínimo 6 caracteres). Desde ese momento entras con ella.
 5. Ve a **Más → Avisos** y toca **Activar notificaciones** (en iPhone, abre la app desde el ícono).
 
 ## 2. Pantalla de inicio

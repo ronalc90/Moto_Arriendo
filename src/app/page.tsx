@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { getProfile } from "@/lib/auth";
+import { getProfile, needsOnboarding } from "@/lib/auth";
 
 /** Entry point: send each user to their own area. */
 export default async function Home() {
@@ -8,5 +8,6 @@ export default async function Home() {
   if (!profile.active) redirect("/salir?error=inactivo");
   if (profile.role === "admin") redirect("/admin");
   if (!profile.data_consent_at) redirect("/consentimiento");
+  if (needsOnboarding(profile)) redirect("/bienvenida");
   redirect("/conductor");
 }

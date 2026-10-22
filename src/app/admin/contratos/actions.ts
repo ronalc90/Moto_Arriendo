@@ -104,3 +104,18 @@ export async function endContract(_prev: ActionState, formData: FormData): Promi
   revalidatePath("/admin", "layout");
   redirect(`/admin/contratos/${id}?hecho=terminado`);
 }
+
+/** Change the daily rate from a date on; earlier days keep the old rate. */
+export async function changeContractRate(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  await requireAdmin();
+  const id = String(formData.get("id") ?? "");
+  const from = String(formData.get("from") ?? "");
+  const rate = parseCOP(String(formData.get("daily_rate") ?? ""));
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(from)) return fail("Elige desde qué fecha aplica.");
+  if (rate < 1000 || rate > 1_000_000) return fail("La tarifa debe estar entre $1.000 y $1.000.000.");
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("admin_change_contract_rate", { p_contract_id: id, p_from: from, p_rate: rate });
+  if (error) return fail(dbError(error));
+  revalidatePath("/admin", "layout");
+  return done("Tarifa actualizada. Los días anteriores conservan la tarifa que tenían.");
+}

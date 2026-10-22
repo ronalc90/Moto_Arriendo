@@ -13,8 +13,8 @@ export const metadata: Metadata = { title: "Conductores" };
 type Row = {
   id: string;
   status: "active" | "inactive";
-  national_id: string;
-  profiles: { full_name: string; phone: string | null; data_consent_at: string | null };
+  national_id: string | null;
+  profiles: { full_name: string; phone: string | null; data_consent_at: string | null; username: string | null; onboarded_at: string | null };
 };
 
 export default async function DriversPage() {
@@ -23,7 +23,7 @@ export default async function DriversPage() {
   const [{ data }, { data: overview }] = await Promise.all([
     supabase
       .from("drivers")
-      .select("id, status, national_id, profiles!inner(full_name, phone, data_consent_at)")
+      .select("id, status, national_id, profiles!inner(full_name, phone, data_consent_at, username, onboarded_at)")
       .order("status")
       .order("created_at"),
     supabase.from("contract_overview").select("*").eq("status", "active"),
@@ -54,9 +54,11 @@ export default async function DriversPage() {
                     {d.status === "inactive" ? <span className="ml-2 text-xs font-normal text-ink-3">(inactivo)</span> : null}
                   </p>
                   <p className="text-xs text-ink-2">
-                    {formatPhone(d.profiles.phone)} · CC {d.national_id}
+                    {[d.profiles.username, d.profiles.phone ? formatPhone(d.profiles.phone) : null, d.national_id ? `CC ${d.national_id}` : null]
+                      .filter(Boolean)
+                      .join(" · ")}
                     {o ? ` · ${o.plate}` : " · sin moto"}
-                    {!d.profiles.data_consent_at ? " · no ha entrado" : ""}
+                    {!d.profiles.data_consent_at ? " · no ha entrado" : !d.profiles.onboarded_at ? " · faltan sus datos" : ""}
                   </p>
                 </div>
                 {o ? (

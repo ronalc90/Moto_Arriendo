@@ -5,6 +5,18 @@ export function driverEmailFromPhone(phone: string): string {
   return `${phone}@${DRIVER_EMAIL_DOMAIN}`;
 }
 
+/** Drivers created with a username (e.g. "hamer") sign in with it. */
+export function driverEmailFromUsername(username: string): string {
+  return `${username.trim().toLowerCase()}@${DRIVER_EMAIL_DOMAIN}`;
+}
+
+/** Usernames: start with a letter, 3-30 letters, numbers, dot, dash or underscore. */
+export const USERNAME_RE = /^[a-z][a-z0-9._-]{2,29}$/;
+
+/** Minimum length for passwords the admin assigns / the user chooses. */
+export const MIN_ASSIGNED_PASSWORD = 4;
+export const MIN_OWN_PASSWORD = 6; // Supabase Auth rejects shorter ones
+
 export const APP_NAME = "Moto Arriendo";
 
 export type Light = "green" | "yellow" | "red";

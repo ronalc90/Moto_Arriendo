@@ -11,6 +11,9 @@ export type Profile = {
   role: "admin" | "driver";
   active: boolean;
   data_consent_at: string | null;
+  username: string | null;
+  must_change_password: boolean;
+  onboarded_at: string | null;
 };
 
 /** Current user's profile (deduplicated per request). Null when signed out. */
@@ -22,7 +25,7 @@ export const getProfile = cache(async (): Promise<Profile | null> => {
 
   const { data } = await supabase
     .from("profiles")
-    .select("id, full_name, phone, email, role, active, data_consent_at")
+    .select("id, full_name, phone, email, role, active, data_consent_at, username, must_change_password, onboarded_at")
     .eq("id", userId)
     .maybeSingle();
   return (data as Profile | null) ?? null;
@@ -39,12 +42,22 @@ export async function requireAdmin(): Promise<Profile> {
   return profile;
 }
 
-/** Requires an active driver who accepted the data policy. */
+/** True while a driver still has to fill in their data or choose a password. */
+export function needsOnboarding(profile: Profile): boolean {
+  return profile.role === "driver" && (profile.must_change_password || !profile.onboarded_at);
+}
+
+/**
+ * Requires an active driver who accepted the data policy and completed the
+ * first sign-in (own data + own password). Every driver page and action
+ * goes through here, so none of them can be reached before that.
+ */
 export async function requireDriver(): Promise<Profile> {
   const profile = await getProfile();
   if (!profile) redirect("/salir?error=sin-acceso");
   if (!profile.active) redirect("/salir?error=inactivo");
   if (profile.role !== "driver") redirect("/admin");
   if (!profile.data_consent_at) redirect("/consentimiento");
+  if (needsOnboarding(profile)) redirect("/bienvenida");
   return profile;
 }

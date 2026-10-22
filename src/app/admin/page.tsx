@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, ClipboardList } from "lucide-react";
 import { Badge, Card, EmptyState, PageHeader, SectionTitle, Stat } from "@/components/ui";
 import { LightBadge } from "@/components/traffic-light";
 import { OwnerFilter } from "@/components/owner-filter";
@@ -30,7 +30,7 @@ export default async function AdminTodayPage({ searchParams }: PageProps<"/admin
   const supabase = await createClient();
   const { today, month, from, to } = currentMonth();
 
-  const [overviewRes, pendingRes, expRes, inspRes, damagesRes, incomeRes, owners] = await Promise.all([
+  const [overviewRes, pendingRes, expRes, inspRes, damagesRes, incomeRes, owners, setupRes] = await Promise.all([
     supabase.from("contract_overview").select("*").eq("status", "active"),
     supabase
       .from("payments")
@@ -47,7 +47,9 @@ export default async function AdminTodayPage({ searchParams }: PageProps<"/admin
       .gte("paid_on", from)
       .lte("paid_on", to),
     getOwners(),
+    supabase.rpc("setup_pending"),
   ]);
+  const setup = (setupRes.data as Array<{ kind: string; ref_id: string; title: string; body: string; url: string }> | null) ?? [];
 
   let overview = (overviewRes.data as ContractOverview[]) ?? [];
   let pending = (pendingRes.data as unknown as PendingPayment[]) ?? [];
@@ -93,6 +95,25 @@ export default async function AdminTodayPage({ searchParams }: PageProps<"/admin
         subtitle={`${WEEKDAYS[weekday(today)]} ${formatDate(today)}`}
         action={owners.length > 1 ? <OwnerFilter owners={owners} value={owner} /> : null}
       />
+
+      {setup.length ? (
+        <>
+          <SectionTitle>Pendientes por llenar</SectionTitle>
+          <Card className="divide-y divide-line border-warn/40 p-0">
+            {setup.map((t) => (
+              <Link key={t.kind + t.ref_id} href={t.url} className="flex items-center gap-3 px-4 py-3 hover:bg-surface-2">
+                <ClipboardList className="size-5 shrink-0 text-warn" />
+                <div className="min-w-0 flex-1">
+                  <p className="font-semibold">{t.title}</p>
+                  <p className="text-xs text-ink-2">{t.body}</p>
+                </div>
+                <ChevronRight className="size-4 text-ink-3" />
+              </Link>
+            ))}
+          </Card>
+          <div className="h-4" />
+        </>
+      ) : null}
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Link href="/admin/pagos">

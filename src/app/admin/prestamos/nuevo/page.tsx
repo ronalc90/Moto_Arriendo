@@ -17,7 +17,7 @@ export default async function NewLoanPage({ searchParams }: PageProps<"/admin/pr
   const supabase = await createClient();
   const [drivers, { data: settings }] = await Promise.all([
     getDriverOptions(true),
-    supabase.from("settings").select("default_daily_installment").eq("id", 1).single(),
+    supabase.from("settings").select("default_daily_installment, default_loan_concept, default_installment_required").eq("id", 1).single(),
   ]);
   return (
     <>
@@ -40,7 +40,7 @@ export default async function NewLoanPage({ searchParams }: PageProps<"/admin/pr
             </Select>
           </Field>
           <Field label="Concepto" htmlFor="concept">
-            <Input id="concept" name="concept" defaultValue="Pase A2" required />
+            <Input id="concept" name="concept" defaultValue={settings?.default_loan_concept ?? "Pase A2"} required />
           </Field>
           <div className="grid grid-cols-2 gap-3">
             <Field label="Monto prestado" htmlFor="amount">
@@ -59,7 +59,11 @@ export default async function NewLoanPage({ searchParams }: PageProps<"/admin/pr
             <Input id="loan_date" name="loan_date" type="date" defaultValue={bogotaToday()} required />
           </Field>
           <label className="flex items-start gap-3 rounded-xl border border-line p-3">
-            <input type="checkbox" name="installment_required" defaultChecked className="mt-0.5 size-5 accent-[var(--brand-strong)]" />
+            <input
+              type="checkbox"
+              name="installment_required"
+              defaultChecked={settings?.default_installment_required ?? true}
+              className="mt-0.5 size-5 accent-[var(--brand-strong)]" />
             <span className="text-sm">
               <strong>Abono obligatorio.</strong> Si no lo paga, suma deuda y afecta el semáforo. Desmárcalo para que sea
               voluntario.

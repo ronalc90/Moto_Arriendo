@@ -14,13 +14,15 @@ export function LoginForm({ notice }: { notice?: string }) {
       {notice && !state.error ? <Alert tone="warn">{notice}</Alert> : null}
       {state.error ? <Alert tone="bad">{state.error}</Alert> : null}
 
-      <Field label="Celular o correo" htmlFor="user" hint="Conductores: tu número de celular de 10 dígitos.">
+      <Field label="Usuario" htmlFor="user" hint="Conductores: el usuario que te dio el administrador (ej: hamer) o tu celular.">
         <Input
           id="user"
           name="user"
           autoComplete="username"
-          inputMode="email"
-          placeholder="3001234567"
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
+          placeholder="hamer"
           defaultValue={state.user}
           required
         />

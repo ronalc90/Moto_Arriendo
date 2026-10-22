@@ -7,11 +7,12 @@ import { requireAdmin } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { dbError, done, fail, type ActionState } from "@/lib/action-state";
 import { normalizePhone, parseCOP } from "@/lib/format";
+import { MIN_ASSIGNED_PASSWORD, USERNAME_RE } from "@/lib/constants";
 
 const optionalDate = z.union([z.literal(""), z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Fecha inválida")]);
 const base = {
-  full_name: z.string().trim().min(3, "Escribe el nombre completo"),
-  national_id: z.string().trim().min(4, "Escribe la cédula").max(20),
+  full_name: z.string().trim().min(2, "Escribe el nombre"),
+  national_id: z.union([z.literal(""), z.string().trim().min(4, "Revisa la cédula").max(20)]),
   license_number: z.string().trim().max(30),
   license_category: z.string().trim().max(10),
   license_expires_on: optionalDate,
@@ -37,27 +38,32 @@ function read(formData: FormData) {
   };
 }
 
-const createSchema = z.object({
-  ...base,
-  phone: z.string().regex(/^\d{10}$/, "El celular debe tener 10 dígitos"),
-  password: z.string().min(8, "La contraseña debe tener al menos 8 caracteres"),
-});
+const createSchema = z
+  .object({
+    ...base,
+    username: z.union([z.literal(""), z.string().regex(USERNAME_RE, "El usuario debe empezar por una letra y no llevar espacios (ej: hamer)")]),
+    phone: z.union([z.literal(""), z.string().regex(/^\d{10}$/, "El celular debe tener 10 dígitos")]),
+    password: z.string().min(MIN_ASSIGNED_PASSWORD, `La contraseña debe tener al menos ${MIN_ASSIGNED_PASSWORD} caracteres`),
+  })
+  .refine((d) => d.username || d.phone, { message: "Escribe un usuario o un celular para que pueda entrar" });
 
 export async function createDriver(_prev: ActionState, formData: FormData): Promise<ActionState> {
   await requireAdmin();
   const parsed = createSchema.safeParse({
     ...read(formData),
+    username: String(formData.get("username") ?? "").trim().toLowerCase(),
     phone: normalizePhone(String(formData.get("phone") ?? "")),
     password: String(formData.get("password") ?? ""),
   });
   if (!parsed.success) return fail(parsed.error.issues[0]?.message ?? "Revisa los datos");
   const d = parsed.data;
   const supabase = await createClient();
-  const { data, error } = await supabase.rpc("admin_create_driver", {
+  const { data, error } = await supabase.rpc("admin_create_driver_account", {
     p_full_name: d.full_name,
-    p_phone: d.phone,
+    p_username: d.username || null,
+    p_phone: d.phone || null,
     p_password: d.password,
-    p_national_id: d.national_id,
+    p_national_id: d.national_id || null,
     p_license_number: d.license_number || null,
     p_license_category: d.license_category || null,
     p_license_expires_on: d.license_expires_on || null,
@@ -84,7 +90,7 @@ export async function updateDriver(_prev: ActionState, formData: FormData): Prom
   const { error } = await supabase
     .from("drivers")
     .update({
-      national_id: d.national_id,
+      national_id: d.national_id || null,
       license_number: d.license_number || null,
       license_category: d.license_category || null,
       license_expires_on: d.license_expires_on || null,
@@ -106,11 +112,13 @@ export async function resetDriverPassword(_prev: ActionState, formData: FormData
   await requireAdmin();
   const profileId = String(formData.get("profile_id") ?? "");
   const password = String(formData.get("password") ?? "");
-  if (password.length < 8) return fail("La contraseña debe tener al menos 8 caracteres.");
+  if (password.length < MIN_ASSIGNED_PASSWORD) {
+    return fail(`La contraseña debe tener al menos ${MIN_ASSIGNED_PASSWORD} caracteres.`);
+  }
   const supabase = await createClient();
   const { error } = await supabase.rpc("admin_set_password", { p_user_id: profileId, p_password: password });
   if (error) return fail(dbError(error));
-  return done("Contraseña asignada. Compártela con el conductor.");
+  return done("Contraseña asignada. Compártela con el conductor: al entrar la app le pedirá cambiarla.");
 }
 
 export async function setDriverActive(_prev: ActionState, formData: FormData): Promise<ActionState> {

@@ -11,9 +11,9 @@ import { LightBadge } from "@/components/traffic-light";
 import { requireAdmin } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { signedUrl } from "@/lib/storage";
-import { WEEKDAYS, bogotaToday, formatCOP, formatDate, formatTime } from "@/lib/format";
+import { WEEKDAYS, bogotaToday, formatCOP, formatDate, formatThousands, formatTime } from "@/lib/format";
 import type { CalendarDay, Contract, ContractSummary } from "@/lib/types";
-import { endContract, setContractFile, updateContractTerms } from "../actions";
+import { changeContractRate, endContract, setContractFile, updateContractTerms } from "../actions";
 import { ExemptDaysForm, ExemptDaysList } from "../../dias-exentos/exempt-components";
 
 export const metadata: Metadata = { title: "Contrato" };
@@ -37,6 +37,12 @@ export default async function ContractDetailPage({ params, searchParams }: PageP
   const today = bogotaToday();
   const month = parseMonth(sp.mes, (c.end_date && c.end_date < today ? c.end_date : today).slice(0, 7));
   const { from, to } = monthRange(month);
+  const { data: rateRows } = await supabase
+    .from("contract_rates")
+    .select("effective_from, daily_rate")
+    .eq("contract_id", id)
+    .order("effective_from");
+  const rates = rateRows ?? [];
   const [summaryRes, calRes, exemptRes, fileUrl] = await Promise.all([
     supabase.rpc("contract_summary", { p_contract_id: id }),
     supabase.rpc("contract_calendar", { p_contract_id: id, p_from: from, p_to: to }),
@@ -136,9 +142,37 @@ export default async function ContractDetailPage({ params, searchParams }: PageP
             <FileUpload name="file" bucket="contracts" folder={c.drivers.id} kind="document" label="PDF o foto del contrato firmado" />
           </ActionForm>
         </Collapsible>
+        {c.status === "active" ? (
+          <Collapsible title={`Cambiar tarifa (hoy ${formatCOP(c.daily_rate)}/día)`}>
+            <p className="mb-3 text-sm text-ink-2">
+              La nueva tarifa se cobra desde la fecha que elijas. Los días anteriores se siguen cobrando con la tarifa que
+              tenían, así que lo que ya debía no cambia.
+            </p>
+            {rates.length > 1 ? (
+              <ul className="mb-3 space-y-1 text-sm">
+                {rates.map((r) => (
+                  <li key={r.effective_from}>
+                    Desde {formatDate(r.effective_from)}: <strong>{formatCOP(r.daily_rate)}</strong>/día
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+            <ActionForm action={changeContractRate} submitLabel="Cambiar tarifa" submitSize="md">
+              <input type="hidden" name="id" value={id} />
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Nueva tarifa diaria" htmlFor="daily_rate">
+                  <Input id="daily_rate" name="daily_rate" inputMode="numeric" defaultValue={formatThousands(c.daily_rate)} required />
+                </Field>
+                <Field label="Desde" htmlFor="from">
+                  <Input id="from" name="from" type="date" min={c.start_date} defaultValue={today} required />
+                </Field>
+              </div>
+            </ActionForm>
+          </Collapsible>
+        ) : null}
         <Collapsible title="Editar condiciones">
           <p className="mb-3 text-sm text-ink-2">
-            La tarifa, el descanso y la fecha de inicio no se cambian en un contrato vigente porque alterarían toda la deuda
+            El día de descanso y la fecha de inicio no se cambian en un contrato vigente porque alterarían toda la deuda
             calculada. Para cambiarlos, termina este contrato y crea uno nuevo.
           </p>
           <ActionForm action={updateContractTerms} submitLabel="Guardar" submitSize="md">

@@ -10,11 +10,11 @@ export function PasswordForm() {
     <form action={action} className="space-y-4">
       {state.error ? <Alert tone="bad">{state.error}</Alert> : null}
       {state.ok ? <Alert tone="ok">Contraseña actualizada.</Alert> : null}
-      <Field label="Nueva contraseña" htmlFor="password" hint="Mínimo 8 caracteres.">
-        <Input id="password" name="password" type="password" autoComplete="new-password" minLength={8} required />
+      <Field label="Nueva contraseña" htmlFor="password" hint="Mínimo 6 caracteres.">
+        <Input id="password" name="password" type="password" autoComplete="new-password" minLength={6} required />
       </Field>
       <Field label="Repite la contraseña" htmlFor="confirm">
-        <Input id="confirm" name="confirm" type="password" autoComplete="new-password" minLength={8} required />
+        <Input id="confirm" name="confirm" type="password" autoComplete="new-password" minLength={6} required />
       </Field>
       <Button type="submit" className="w-full" size="lg" disabled={pending}>
         {pending ? "Guardando…" : "Guardar contraseña"}

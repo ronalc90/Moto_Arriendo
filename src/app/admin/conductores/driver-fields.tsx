@@ -2,14 +2,16 @@ import { Field, Input, Textarea } from "@/components/ui";
 import { formatThousands } from "@/lib/format";
 import type { Driver } from "@/lib/types";
 
-export function DriverFields({ driver, fullName }: { driver?: Driver; fullName?: string }) {
+export function DriverFields({ driver, fullName, hideName }: { driver?: Driver; fullName?: string; hideName?: boolean }) {
   return (
     <div className="grid gap-4 sm:grid-cols-2">
-      <Field label="Nombre completo" htmlFor="full_name">
-        <Input id="full_name" name="full_name" defaultValue={fullName} required autoComplete="off" />
-      </Field>
+      {hideName ? null : (
+        <Field label="Nombre completo" htmlFor="full_name">
+          <Input id="full_name" name="full_name" defaultValue={fullName} required autoComplete="off" />
+        </Field>
+      )}
       <Field label="Cédula" htmlFor="national_id">
-        <Input id="national_id" name="national_id" defaultValue={driver?.national_id} required inputMode="numeric" />
+        <Input id="national_id" name="national_id" defaultValue={driver?.national_id ?? ""} inputMode="numeric" />
       </Field>
       <Field label="Número de licencia" htmlFor="license_number">
         <Input id="license_number" name="license_number" defaultValue={driver?.license_number ?? ""} />

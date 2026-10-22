@@ -78,7 +78,7 @@ export type Motorcycle = {
 export type Driver = {
   id: string;
   profile_id: string;
-  national_id: string;
+  national_id: string | null;
   license_number: string | null;
   license_category: string | null;
   license_expires_on: string | null;

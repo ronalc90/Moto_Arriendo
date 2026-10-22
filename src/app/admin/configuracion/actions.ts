@@ -17,6 +17,8 @@ export async function updateSettings(_prev: ActionState, formData: FormData): Pr
       inspection_weekday: int(0, 6),
       default_daily_rate: z.number().int().min(1000).max(1_000_000),
       default_daily_installment: z.number().int().min(0).max(1_000_000),
+      default_loan_concept: z.string().trim().min(2, "Escribe el concepto del préstamo").max(120),
+      default_installment_required: z.boolean(),
       payment_reminder_time: z.string().regex(/^\d{2}:\d{2}$/),
       first_service_min_km: int(0, 100000),
       first_service_km: int(1, 100000),
@@ -29,6 +31,8 @@ export async function updateSettings(_prev: ActionState, formData: FormData): Pr
       inspection_weekday: formData.get("inspection_weekday"),
       default_daily_rate: parseCOP(String(formData.get("default_daily_rate") ?? "")),
       default_daily_installment: parseCOP(String(formData.get("default_daily_installment") ?? "")),
+      default_loan_concept: String(formData.get("default_loan_concept") ?? ""),
+      default_installment_required: formData.get("default_installment_required") === "on",
       payment_reminder_time: String(formData.get("payment_reminder_time") ?? "19:00"),
       first_service_min_km: formData.get("first_service_min_km"),
       first_service_km: formData.get("first_service_km"),
@@ -56,7 +60,7 @@ export async function createAdmin(_prev: ActionState, formData: FormData): Promi
     .object({
       full_name: z.string().trim().min(3, "Escribe el nombre"),
       email: z.string().trim().email("Correo inválido"),
-      password: z.string().min(8, "La contraseña debe tener al menos 8 caracteres"),
+      password: z.string().min(4, "La contraseña debe tener al menos 4 caracteres"),
     })
     .safeParse({
       full_name: String(formData.get("full_name") ?? ""),

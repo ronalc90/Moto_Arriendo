@@ -29,13 +29,23 @@ export default async function DriverDetailPage({ params, searchParams }: PagePro
   const supabase = await createClient();
   const { data } = await supabase
     .from("drivers")
-    .select("*, profiles!inner(id, full_name, phone, data_consent_at, active)")
+    .select("*, profiles!inner(id, full_name, phone, data_consent_at, active, username, onboarded_at, must_change_password)")
     .eq("id", id)
     .maybeSingle();
   if (!data) notFound();
   const driver = data as Driver & {
-    profiles: { id: string; full_name: string; phone: string | null; data_consent_at: string | null; active: boolean };
+    profiles: {
+      id: string;
+      full_name: string;
+      phone: string | null;
+      data_consent_at: string | null;
+      active: boolean;
+      username: string | null;
+      onboarded_at: string | null;
+      must_change_password: boolean;
+    };
   };
+  const login = driver.profiles.username ?? formatPhone(driver.profiles.phone);
 
   const [overviewRes, loansRes, paymentsRes, docsRes] = await Promise.all([
     supabase.from("contract_overview").select("*").eq("driver_id", id).eq("status", "active").maybeSingle(),
@@ -64,15 +74,31 @@ export default async function DriverDetailPage({ params, searchParams }: PagePro
       </Link>
       <PageHeader
         title={driver.profiles.full_name}
-        subtitle={`CC ${driver.national_id} · ${formatPhone(driver.profiles.phone)}`}
+        subtitle={[
+          `Usuario: ${login}`,
+          driver.national_id ? `CC ${driver.national_id}` : null,
+          driver.profiles.phone ? formatPhone(driver.profiles.phone) : null,
+        ]
+          .filter(Boolean)
+          .join(" · ")}
         action={driver.status === "active" ? <Badge tone="ok">Activo</Badge> : <Badge>Inactivo</Badge>}
       />
 
       {sp.nuevo ? (
         <div className="mb-4">
           <Alert tone="ok">
-            Conductor creado. Ya puede entrar con su celular {formatPhone(driver.profiles.phone)} y la contraseña que le asignaste.
-            Ahora crea su contrato.
+            Conductor creado. Ya puede entrar con el usuario <strong>{login}</strong> y la contraseña que le asignaste. Al
+            entrar por primera vez la app le pedirá sus datos y una contraseña propia. Ahora crea su contrato.
+          </Alert>
+        </div>
+      ) : null}
+
+      {!driver.profiles.onboarded_at ? (
+        <div className="mb-4">
+          <Alert tone="warn">
+            {driver.profiles.data_consent_at
+              ? "Ya entró a la app pero todavía no termina de llenar sus datos."
+              : "Todavía no ha entrado a la app. La primera vez le pedirá sus datos (cédula, licencia, contacto de emergencia) y una contraseña propia."}
           </Alert>
         </div>
       ) : null}
@@ -215,8 +241,8 @@ export default async function DriverDetailPage({ params, searchParams }: PagePro
         <Collapsible title="Asignar nueva contraseña">
           <ActionForm action={resetDriverPassword} submitLabel="Asignar contraseña" submitSize="md" resetOnSuccess>
             <input type="hidden" name="profile_id" value={driver.profiles.id} />
-            <Field label="Nueva contraseña" htmlFor="password" hint="Mínimo 8 caracteres.">
-              <Input id="password" name="password" minLength={8} required autoComplete="new-password" />
+            <Field label="Nueva contraseña" htmlFor="password" hint="Mínimo 4 caracteres. Al entrar, la app le pedirá cambiarla.">
+              <Input id="password" name="password" minLength={4} required autoComplete="new-password" />
             </Field>
           </ActionForm>
         </Collapsible>

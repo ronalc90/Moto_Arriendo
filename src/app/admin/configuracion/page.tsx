@@ -85,8 +85,23 @@ export default async function SettingsPage() {
                 ))}
               </Select>
             </Field>
-            <Field label="Tarifa diaria por defecto" htmlFor="default_daily_rate">
+            <Field label="Tarifa diaria por defecto" htmlFor="default_daily_rate" hint="Se propone al crear un contrato. Cada contrato puede tener la suya y cambiarla desde una fecha.">
               <Input id="default_daily_rate" name="default_daily_rate" inputMode="numeric" defaultValue={formatThousands(s?.default_daily_rate)} />
+            </Field>
+
+            <Field label="Hora del recordatorio de pago" htmlFor="payment_reminder_time">
+              <Input
+                id="payment_reminder_time"
+                name="payment_reminder_time"
+                type="time"
+                defaultValue={String(s?.payment_reminder_time ?? "19:00").slice(0, 5)}
+              />
+            </Field>
+          </div>
+          <p className="pt-2 text-sm font-semibold">Préstamos (valores que se proponen al crear uno)</p>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="Concepto por defecto" htmlFor="default_loan_concept">
+              <Input id="default_loan_concept" name="default_loan_concept" defaultValue={s?.default_loan_concept ?? "Pase A2"} />
             </Field>
             <Field label="Abono diario por defecto" htmlFor="default_daily_installment">
               <Input
@@ -96,14 +111,18 @@ export default async function SettingsPage() {
                 defaultValue={formatThousands(s?.default_daily_installment)}
               />
             </Field>
-            <Field label="Hora del recordatorio de pago" htmlFor="payment_reminder_time">
-              <Input
-                id="payment_reminder_time"
-                name="payment_reminder_time"
-                type="time"
-                defaultValue={String(s?.payment_reminder_time ?? "19:00").slice(0, 5)}
+            <label className="flex items-start gap-3 rounded-xl border border-line p-3 sm:col-span-2">
+              <input
+                type="checkbox"
+                name="default_installment_required"
+                defaultChecked={s?.default_installment_required ?? true}
+                className="mt-0.5 size-5 accent-[var(--brand-strong)]"
               />
-            </Field>
+              <span className="text-sm">
+                <strong>Abono obligatorio por defecto.</strong> Si el conductor no lo paga, suma deuda y afecta el semáforo.
+                En cada préstamo lo puedes cambiar.
+              </span>
+            </label>
           </div>
           <p className="pt-2 text-sm font-semibold">Mantenimiento por kilometraje</p>
           <div className="grid gap-4 sm:grid-cols-3">
@@ -154,7 +173,7 @@ export default async function SettingsPage() {
                 <Input id="email" name="email" type="email" required />
               </Field>
               <Field label="Contraseña" htmlFor="admin_password">
-                <Input id="admin_password" name="password" minLength={8} required autoComplete="new-password" />
+                <Input id="admin_password" name="password" minLength={4} required autoComplete="new-password" />
               </Field>
             </div>
           </ActionForm>
