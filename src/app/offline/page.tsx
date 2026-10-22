@@ -13,6 +13,8 @@ export default function OfflinePage() {
       <p className="mt-2 max-w-xs text-[#c3c6cc]">
         Revisa tus datos o el wifi y vuelve a intentar. Tus pagos no se pierden: súbelos cuando tengas señal.
       </p>
+      {/* A full page reload is intended here (retry the network). */}
+      {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
       <a href="/" className="mt-6 rounded-2xl bg-brand px-6 py-3 font-semibold text-brand-ink">
         Reintentar
       </a>

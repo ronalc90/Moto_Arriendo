@@ -1,36 +1,64 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Moto Arriendo
 
-## Getting Started
+Plataforma web (instalable en el celular) para controlar el arriendo de motos a conductores de
+aplicaciones (Picap, DiDi, Uber Moto, Rappi): pagos diarios con comprobante, préstamos con abonos,
+atrasos con semáforo, documentos con vencimientos, inspecciones semanales y reportes de daño.
 
-First, run the development server:
+- **Conductores:** entran con su **celular + contraseña**, suben comprobantes, inspecciones y daños.
+- **Administradores:** entran con **correo + contraseña**, aprueban pagos y controlan todo.
+
+## Tecnología
+
+| Parte | Herramienta |
+| --- | --- |
+| Web y servidor | Next.js 16 (App Router) + TypeScript + Tailwind CSS 4 |
+| Base de datos, usuarios y archivos | Supabase (PostgreSQL, Auth, Storage) |
+| Seguridad | Row Level Security (RLS) en todas las tablas y buckets privados |
+| Despliegue | Vercel (la app) + Supabase (datos) |
+| Celular | PWA instalable (manifest + service worker) |
+
+Moneda en COP sin decimales (`$40.000`), fechas `dd/mm/aaaa`, zona horaria `America/Bogota` para
+todos los cálculos de días y horas límite.
+
+## Documentación
+
+- [Instalación y despliegue paso a paso](docs/instalacion.md)
+- [Arquitectura y diagramas de flujo](docs/arquitectura.md)
+- [Reglas de negocio (saldo, atraso, semáforo, préstamos)](docs/reglas-de-negocio.md)
+- [Modelo de datos](docs/modelo-de-datos.md)
+
+## Comandos
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install          # instalar dependencias
+cp .env.example .env.local   # y llenar los 2 valores de Supabase
+npm run dev          # abrir en http://localhost:3000
+npm run build        # compilar para producción
+npm run test:db      # pruebas de saldo y RLS contra un PostgreSQL local (ver docs)
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Estructura
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```
+src/
+  app/
+    login/            inicio de sesión (celular o correo)
+    consentimiento/   autorización Ley 1581 de 2012 (primer ingreso del conductor)
+    conductor/        pantallas del conductor (celular)
+    admin/            pantallas del administrador
+    cuenta/           cambiar contraseña
+    salir/            cerrar sesión
+  components/         interfaz reutilizable
+  lib/                Supabase, formatos (COP, fechas Bogotá), autenticación
+  proxy.ts            refresca la sesión y protege las rutas
+supabase/
+  migrations/         esquema, lógica de negocio, RLS, buckets
+  tests/              pruebas automáticas de saldo y RLS
+public/sw.js          service worker (PWA y notificaciones push)
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Seguridad en una línea
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+La app solo usa la clave **publicable** de Supabase. Toda la protección vive en la base de datos (RLS),
+así que un conductor no puede ver nada de otro aunque manipule la app. La clave secreta
+(`service_role`) **no se usa en ninguna parte**.
