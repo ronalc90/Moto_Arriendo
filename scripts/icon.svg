@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="112" fill="#1d2025"/>
+  <!-- wheels -->
+  <circle cx="146" cy="338" r="62" fill="none" stroke="#ffc21a" stroke-width="24"/>
+  <circle cx="370" cy="338" r="62" fill="none" stroke="#ffc21a" stroke-width="24"/>
+  <circle cx="146" cy="338" r="12" fill="#ffc21a"/>
+  <circle cx="370" cy="338" r="12" fill="#ffc21a"/>
+  <!-- rear swing arm -->
+  <path d="M146 338 L236 318" stroke="#f5f4ef" stroke-width="18" stroke-linecap="round"/>
+  <!-- engine block -->
+  <rect x="214" y="262" width="88" height="66" rx="14" fill="#f5f4ef"/>
+  <!-- tank + seat silhouette -->
+  <path d="M120 236 Q128 214 152 214 L238 214 Q252 196 280 192 L318 192 Q338 194 342 214 L342 236 Q300 252 250 252 L150 252 Q124 252 120 236 Z" fill="#ffc21a"/>
+  <!-- front fork -->
+  <path d="M332 214 L370 338" stroke="#f5f4ef" stroke-width="18" stroke-linecap="round"/>
+  <!-- handlebar -->
+  <path d="M318 150 L352 158 L332 214" fill="none" stroke="#f5f4ef" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- headlight -->
+  <circle cx="362" cy="196" r="14" fill="#f5f4ef"/>
+</svg>

@@ -1,0 +1,102 @@
+@import "tailwindcss";
+
+/*
+ * Moto Arriendo design tokens.
+ * Asphalt neutrals + a safety-yellow accent (like road signs and helmets),
+ * plus the three traffic-light colors used for late payments.
+ */
+:root {
+  --bg: #f5f4ef;
+  --surface: #ffffff;
+  --surface-2: #efede6;
+  --ink: #16181b;
+  --ink-2: #4a4f57;
+  --ink-3: #7b818a;
+  --line: #e0ddd3;
+  --brand: #ffc21a;
+  --brand-ink: #16181b;
+  --brand-strong: #e5a800;
+  --asphalt: #1d2025;
+  --ok: #15803d;
+  --ok-soft: #dcfce7;
+  --warn: #b45309;
+  --warn-soft: #fef3c7;
+  --bad: #b91c1c;
+  --bad-soft: #fee2e2;
+  --info: #1d4ed8;
+  --info-soft: #dbeafe;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0f1114;
+    --surface: #181b20;
+    --surface-2: #20242a;
+    --ink: #f2f1ec;
+    --ink-2: #c3c6cc;
+    --ink-3: #8b9099;
+    --line: #2c3138;
+    --brand: #ffc933;
+    --brand-ink: #16181b;
+    --brand-strong: #ffd666;
+    --asphalt: #0b0c0e;
+    --ok: #4ade80;
+    --ok-soft: #10301c;
+    --warn: #fbbf24;
+    --warn-soft: #3a2a08;
+    --bad: #f87171;
+    --bad-soft: #3b1414;
+    --info: #93c5fd;
+    --info-soft: #172554;
+  }
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-line: var(--line);
+  --color-brand: var(--brand);
+  --color-brand-ink: var(--brand-ink);
+  --color-brand-strong: var(--brand-strong);
+  --color-asphalt: var(--asphalt);
+  --color-ok: var(--ok);
+  --color-ok-soft: var(--ok-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --color-bad: var(--bad);
+  --color-bad-soft: var(--bad-soft);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-feature-settings: "tnum" 1;
+}
+
+/* Numbers line up in tables and amounts */
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Respect the iPhone home indicator in the bottom navigation */
+.safe-bottom {
+  padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+}
+
+:focus-visible {
+  outline: 3px solid var(--brand-strong);
+  outline-offset: 2px;
+}
