@@ -23,6 +23,7 @@ todos los cálculos de días y horas límite.
 ## Documentación
 
 - [Instalación y despliegue paso a paso](docs/instalacion.md)
+- [**Salida a producción: lista de pasos**](docs/produccion.md)
 - [Arquitectura y diagramas de flujo](docs/arquitectura.md)
 - [Reglas de negocio (saldo, atraso, semáforo, préstamos)](docs/reglas-de-negocio.md)
 - [Modelo de datos](docs/modelo-de-datos.md)
@@ -39,6 +40,7 @@ todos los cálculos de días y horas límite.
 | 1 | Conductores, motos, documentos con vencimientos, contratos, pagos (subir/aprobar/rechazar), saldo, semáforo, calendario, préstamos, días exentos, inspección semanal, daños, panel Hoy, datos de prueba, pruebas de RLS |
 | 2 | Mantenimiento por kilometraje (configurable) con facturas y quién pagó; avisos automáticos (campana, push y correo) |
 | 3 | Incidentes (accidentes, multas, inmovilizaciones, robo), gastos, reportes financieros por moto y propietario con gráficas de recuperación de la inversión, exportar a Excel, evaluación de WhatsApp + enlaces gratis |
+| Producción | Páginas legales públicas (acerca de, política de datos Ley 1581, cookies, términos), aviso de cookies, cabeceras de seguridad (CSP, HSTS), pantallas de error y de carga, respaldo completo en Excel, botón para borrar los datos de prueba |
 
 ## Comandos
 
@@ -77,4 +79,5 @@ public/sw.js          service worker (PWA y notificaciones push)
 
 La app solo usa la clave **publicable** de Supabase. Toda la protección vive en la base de datos (RLS),
 así que un conductor no puede ver nada de otro aunque manipule la app. La clave secreta
-(`service_role`) **no se usa en ninguna parte**.
+(`service_role`) **no se usa en ninguna parte**. Las cabeceras HTTP incluyen una política de
+contenido (CSP) que solo permite cargar recursos de la propia app y de Supabase.

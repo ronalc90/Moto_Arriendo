@@ -102,3 +102,39 @@ export async function sendTestNotification(): Promise<ActionState> {
   if (error) return fail(dbError(error));
   return done("Notificación de prueba enviada. Debería llegar en unos segundos.");
 }
+
+/** Storage folders that belong to a driver (flat: <bucket>/<driverId>/<file>). */
+const DRIVER_BUCKETS = ["receipts", "inspections", "damages", "documents", "contracts"] as const;
+
+async function emptyFolder(supabase: Awaited<ReturnType<typeof createClient>>, bucket: string, folder: string) {
+  for (let round = 0; round < 20; round++) {
+    const { data } = await supabase.storage.from(bucket).list(folder, { limit: 100 });
+    const files = (data ?? []).filter((f) => f.id).map((f) => `${folder}/${f.name}`);
+    if (!files.length) return;
+    const { error } = await supabase.storage.from(bucket).remove(files);
+    if (error) return;
+  }
+}
+
+/**
+ * Deletes the TEST data (plates PRU01A-03A, phones 3000000001-3) and the files
+ * they uploaded. Real data is never touched (enforced in the SQL function).
+ */
+export async function purgeTestData(): Promise<ActionState> {
+  await requireAdmin();
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("admin_purge_test_data");
+  if (error) return fail(dbError(error, "No se pudieron borrar los datos de prueba."));
+  const r = (data ?? {}) as { motorcycles?: number; drivers?: number; payments?: number; driver_folders?: string[]; moto_folders?: string[] };
+  for (const id of r.driver_folders ?? []) {
+    for (const bucket of DRIVER_BUCKETS) await emptyFolder(supabase, bucket, id);
+  }
+  for (const id of r.moto_folders ?? []) {
+    await emptyFolder(supabase, "documents", `moto/${id}`);
+    await emptyFolder(supabase, "documents", `incidents/${id}`);
+  }
+  revalidatePath("/admin", "layout");
+  return done(
+    `Listo. Se borraron ${r.motorcycles ?? 0} motos, ${r.drivers ?? 0} conductores y ${r.payments ?? 0} pagos de prueba con sus fotos.`,
+  );
+}

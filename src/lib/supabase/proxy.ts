@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { supabaseUrl, supabasePublishableKey } from "./env";
 
 /** Paths reachable without a session. */
-const PUBLIC_PATHS = ["/login", "/offline", "/salir"];
+const PUBLIC_PATHS = ["/login", "/offline", "/salir", "/acerca", "/privacidad", "/cookies", "/terminos"];
 
 /**
  * Refreshes the Supabase session cookie on every request and sends

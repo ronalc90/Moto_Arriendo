@@ -3,7 +3,10 @@ import { ActionForm } from "@/components/action-form";
 import { Collapsible } from "@/components/collapsible";
 import { PushToggle } from "@/components/push-toggle";
 import { TestNotificationButton } from "./test-button";
+import { PurgeTestDataButton } from "./purge-button";
+import { Download } from "lucide-react";
 import { Badge, Card, Field, Input, PageHeader, SectionTitle, Select } from "@/components/ui";
+import { buttonClass } from "@/components/ui";
 import { requireAdmin } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { WEEKDAYS, formatDateTime, formatThousands } from "@/lib/format";
@@ -47,6 +50,7 @@ export default async function SettingsPage() {
     supabase.rpc("admin_app_config_status"),
     supabase.rpc("vapid_public_key"),
   ]);
+  const { data: hasTestData } = await supabase.rpc("has_test_data");
   const names = new Map((admins ?? []).map((a) => [a.id, a.full_name]));
   const cfg = (status ?? {}) as { email_enabled?: boolean; email_from?: string; push_enabled?: boolean };
 
@@ -170,6 +174,29 @@ export default async function SettingsPage() {
           </ActionForm>
         </Collapsible>
       </div>
+
+      <SectionTitle>Respaldo y datos</SectionTitle>
+      <Card className="space-y-4">
+        <div className="space-y-2">
+          <p className="text-sm text-ink-2">
+            Descarga un Excel con todo: motos, conductores, contratos, pagos, préstamos, gastos, mantenimientos e
+            incidentes. Hazlo cada semana y guárdalo en tu Drive o correo.
+          </p>
+          <a href="/api/exportar?tipo=respaldo" className={buttonClass("secondary", "md", "inline-flex items-center gap-2")}>
+            <Download className="size-4" /> Descargar respaldo (Excel)
+          </a>
+        </div>
+        {hasTestData ? (
+          <div className="space-y-2 border-t border-line pt-4">
+            <p className="text-sm text-ink-2">
+              Todavía hay <strong className="text-ink">datos de prueba</strong> (motos PRU01A, PRU02A, PRU03A y conductores
+              de prueba con celulares 300 000 000X). Bórralos antes de empezar a usar la app de verdad. Tus datos reales no
+              se tocan.
+            </p>
+            <PurgeTestDataButton />
+          </div>
+        ) : null}
+      </Card>
 
       <SectionTitle>Registro de cambios (auditoría)</SectionTitle>
       <Card className="divide-y divide-line p-0 text-sm">

@@ -109,3 +109,31 @@ body {
   outline: 3px solid var(--brand-strong);
   outline-offset: 2px;
 }
+
+/* Legal / informational pages */
+.legal h1 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+.legal h2 {
+  margin-top: 1.75rem;
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+.legal ul,
+.legal ol {
+  padding-left: 1.25rem;
+  display: grid;
+  gap: 0.35rem;
+}
+.legal ul { list-style: disc; }
+.legal ol { list-style: decimal; }
+.legal strong { color: var(--ink); }
+.legal a { color: var(--info); font-weight: 500; }
+.legal table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+.legal th, .legal td { border: 1px solid var(--line); padding: 0.5rem 0.65rem; text-align: left; vertical-align: top; }
+.legal th { background: var(--surface-2); color: var(--ink); }

@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import { LoginForm } from "./login-form";
+import { CookieNotice } from "@/components/cookie-notice";
+import { LegalFooter } from "@/components/legal-footer";
 
 export const metadata: Metadata = { title: "Entrar" };
 
@@ -28,7 +30,9 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
         <p className="mt-6 text-center text-xs text-ink-3">
           ¿Olvidaste tu contraseña? Pídele al administrador que te asigne una nueva.
         </p>
+        <LegalFooter className="mt-5" />
       </div>
+      <CookieNotice />
     </main>
   );
 }

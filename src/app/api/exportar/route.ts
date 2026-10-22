@@ -19,7 +19,9 @@ export async function GET(request: NextRequest) {
   if (!profile || profile.role !== "admin" || !profile.active) {
     return NextResponse.json({ error: "No autorizado" }, { status: 403 });
   }
-  const tipo = request.nextUrl.searchParams.get("tipo") === "gastos" ? "gastos" : "pagos";
+  const tipoParam = request.nextUrl.searchParams.get("tipo");
+  if (tipoParam === "respaldo") return fullBackup();
+  const tipo = tipoParam === "gastos" ? "gastos" : "pagos";
   const moto = request.nextUrl.searchParams.get("moto");
   const supabase = await createClient();
   const wb = new ExcelJS.Workbook();
@@ -124,6 +126,57 @@ export async function GET(request: NextRequest) {
     headers: {
       "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       "Content-Disposition": `attachment; filename="moto-arriendo-${tipo}-${bogotaToday()}.xlsx"`,
+      "Cache-Control": "no-store",
+    },
+  });
+}
+
+/** Every business table in one workbook (one sheet per table) — a manual backup. */
+async function fullBackup() {
+  const supabase = await createClient();
+  const tables: Array<[string, string]> = [
+    ["Motos", "motorcycles"],
+    ["Conductores", "drivers"],
+    ["Usuarios", "profiles"],
+    ["Contratos", "contracts"],
+    ["Pagos", "payments"],
+    ["Préstamos", "loans"],
+    ["Días exentos", "exempt_days"],
+    ["Documentos", "documents"],
+    ["Inspecciones", "inspections"],
+    ["Daños", "damage_reports"],
+    ["Mantenimientos", "maintenance_records"],
+    ["Incidentes", "incidents"],
+    ["Gastos", "expenses"],
+    ["Configuración", "settings"],
+  ];
+  const wb = new ExcelJS.Workbook();
+  wb.creator = "Moto Arriendo";
+  for (const [sheet, table] of tables) {
+    const { data, error } = await supabase.from(table).select("*").limit(50000);
+    if (error) return NextResponse.json({ error: `${table}: ${error.message}` }, { status: 500 });
+    const ws = wb.addWorksheet(sheet);
+    const rows = (data ?? []) as Record<string, unknown>[];
+    const keys = rows.length ? Object.keys(rows[0]) : ["(sin datos)"];
+    ws.columns = keys.map((k) => ({ header: k, key: k, width: Math.min(40, Math.max(12, k.length + 4)) }));
+    for (const r of rows) {
+      ws.addRow(
+        Object.fromEntries(
+          keys.map((k) => {
+            const v = r[k];
+            return [k, v !== null && typeof v === "object" ? JSON.stringify(v) : v];
+          }),
+        ),
+      );
+    }
+    ws.getRow(1).font = { bold: true };
+    ws.views = [{ state: "frozen", ySplit: 1 }];
+  }
+  const buffer = await wb.xlsx.writeBuffer();
+  return new NextResponse(buffer as ArrayBuffer, {
+    headers: {
+      "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "Content-Disposition": `attachment; filename="moto-arriendo-respaldo-${bogotaToday()}.xlsx"`,
       "Cache-Control": "no-store",
     },
   });

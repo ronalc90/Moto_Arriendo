@@ -6,6 +6,7 @@ import { getProfile } from "@/lib/auth";
 import { Card } from "@/components/ui";
 import { formatDateTime, formatPhone } from "@/lib/format";
 import { PasswordForm } from "./password-form";
+import { LegalFooter } from "@/components/legal-footer";
 
 export const metadata: Metadata = { title: "Mi cuenta" };
 
@@ -39,6 +40,7 @@ export default async function AccountPage() {
           <LogOut className="size-5" /> Cerrar sesión
         </button>
       </form>
+      <LegalFooter className="mt-10" />
     </main>
   );
 }
