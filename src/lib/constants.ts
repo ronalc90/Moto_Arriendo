@@ -66,3 +66,39 @@ export const MAX_IMAGE_BYTES = 6 * 1024 * 1024;
 export const MAX_DOC_BYTES = 10 * 1024 * 1024;
 export const IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
 export const DOC_TYPES = [...IMAGE_TYPES, "application/pdf"];
+
+export const MAINTENANCE_LABEL: Record<string, string> = {
+  first_service: "Primera revisión (garantía)",
+  oil_change: "Cambio de aceite",
+  general_service: "Revisión general",
+  repair: "Arreglo",
+  other: "Otro",
+};
+
+export const INCIDENT_KIND_LABEL: Record<string, string> = {
+  accident: "Accidente",
+  fine: "Multa / comparendo",
+  impound: "Inmovilización",
+  theft: "Robo",
+  other: "Otro",
+};
+
+export const RESPONSIBLE_LABEL: Record<string, string> = {
+  driver: "Conductor",
+  owner: "Propietario",
+  third_party: "Tercero",
+  insurer: "Aseguradora",
+  pending: "Por definir",
+};
+
+export const EXPENSE_CATEGORY_LABEL: Record<string, string> = {
+  soat: "SOAT",
+  insurance: "Seguro",
+  tech_inspection: "Técnico-mecánica",
+  gps: "GPS",
+  tax: "Impuestos",
+  maintenance: "Mantenimiento",
+  repair: "Arreglo",
+  fine: "Multa",
+  other: "Otro",
+};

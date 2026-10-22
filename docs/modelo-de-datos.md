@@ -64,3 +64,18 @@ erDiagram
 
 Supabase rechaza en el servidor cualquier archivo de otro tipo o más grande. Las fotos se comprimen en
 el celular antes de subir (máximo 1600 px, JPG).
+
+## Tablas de las fases 2 y 3
+
+| Tabla / vista | Para qué |
+| --- | --- |
+| `maintenance_records` | Servicios y arreglos: tipo, fecha, km, taller, costo, **quién pagó** (conductor o propietario) y factura |
+| `maintenance_due` (vista) | Próxima primera revisión (500–1.000 km), cambio de aceite (cada 2.000 km) y revisión general (cada 4.000 km), con estado *al día / próximo / atrasado*. Intervalos configurables en `settings` |
+| `notifications` | Avisos de cada usuario (campana), con clave única para no repetirlos y marcas de envío push/correo |
+| `push_subscriptions` | Celulares donde cada usuario activó las notificaciones |
+| `incidents` | Accidentes, multas, inmovilizaciones y robos: responsable, costo, quién paga, referencia, documentos, estado |
+| `expenses` | Otros gastos del propietario: SOAT, seguro, GPS, impuestos… |
+| `motorcycle_costs` (vista) | Todos los costos del propietario juntos (gastos + mantenimientos e incidentes pagados por él) |
+| `finance_monthly` (vista) | Por moto y mes: ingresos (tarifas), abonos, costos y neto |
+| `motorcycle_payback` (vista) | Por moto: valor de compra, neto acumulado, % recuperado y cuánto falta |
+| `private.app_config` | Configuración secreta (claves de avisos). No es accesible desde la app ni la API |

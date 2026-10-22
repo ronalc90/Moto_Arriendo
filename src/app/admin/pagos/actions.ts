@@ -14,6 +14,20 @@ function refresh() {
   revalidatePath("/conductor", "layout");
 }
 
+/** After reviewing, jump to the next payment waiting for review (or back to the list). */
+async function nextPendingUrl(currentId: string, result: string) {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("payments")
+    .select("id")
+    .eq("status", "pending")
+    .neq("id", currentId)
+    .order("created_at")
+    .limit(1)
+    .maybeSingle();
+  return data ? `/admin/pagos/${data.id}?hecho=${result}` : `/admin/pagos?hecho=${result}`;
+}
+
 /** Approve a pending payment (optionally adjusting the fee/loan split). */
 export async function approvePayment(_prev: ActionState, formData: FormData): Promise<ActionState> {
   await requireAdmin();
@@ -48,7 +62,7 @@ export async function approvePayment(_prev: ActionState, formData: FormData): Pr
     .eq("id", id);
   if (error) return fail(dbError(error));
   refresh();
-  return done("Pago aprobado.");
+  redirect(await nextPendingUrl(id, "aprobado"));
 }
 
 /** Reject (or void an approved) payment with a reason. */
@@ -61,7 +75,7 @@ export async function rejectPayment(_prev: ActionState, formData: FormData): Pro
   const { error } = await supabase.from("payments").update({ status: "rejected", rejection_reason: reason }).eq("id", id);
   if (error) return fail(dbError(error));
   refresh();
-  return done("Pago rechazado.");
+  redirect(await nextPendingUrl(id, "rechazado"));
 }
 
 /** Put a reviewed payment back to "pending". */

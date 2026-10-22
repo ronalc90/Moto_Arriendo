@@ -37,13 +37,14 @@ export default async function MotorcycleDetailPage({ params }: PageProps<"/admin
     supabase.from("inspections").select("*").eq("motorcycle_id", id).order("inspected_on", { ascending: false }).limit(10),
     supabase.from("damage_reports").select("*").eq("motorcycle_id", id).order("created_at", { ascending: false }).limit(10),
     getOwners(),
-    supabase.from("payments").select("rate_amount").eq("motorcycle_id", id).eq("status", "approved"),
+    supabase.from("motorcycle_payback").select("income, net, remaining").eq("motorcycle_id", id).maybeSingle(),
   ]);
   const docs = (docsRes.data as DocumentRow[]) ?? [];
   const urls = await signedUrls("documents", docs.map((d) => d.file_path));
   const contract = contractRes.data as ContractOverview | null;
-  const produced = (incomeRes.data ?? []).reduce((s, r) => s + r.rate_amount, 0);
-  const recovery = m.purchase_price ? Math.min(100, Math.round((produced / m.purchase_price) * 100)) : null;
+  const produced = Number(incomeRes.data?.income ?? 0);
+  const net = Number(incomeRes.data?.net ?? 0);
+  const recovery = m.purchase_price ? Math.max(0, Math.min(100, Math.round((net / m.purchase_price) * 100))) : null;
 
   return (
     <>
@@ -64,7 +65,12 @@ export default async function MotorcycleDetailPage({ params }: PageProps<"/admin
         <Stat label="Kilometraje" value={`${m.current_km.toLocaleString("es-CO")} km`} />
         <Stat label="Producido (tarifas)" value={formatCOP(produced)} />
         <Stat label="Valor de compra" value={m.purchase_price ? formatCOP(m.purchase_price) : "—"} hint={m.purchase_date ? formatDate(m.purchase_date) : undefined} />
-        <Stat label="Recuperado" value={recovery !== null ? `${recovery}%` : "—"} tone={recovery !== null && recovery >= 100 ? "ok" : undefined} />
+        <Stat
+          label="Inversión recuperada"
+          value={recovery !== null ? `${recovery}%` : "—"}
+          tone={recovery !== null && recovery >= 100 ? "ok" : undefined}
+          hint={m.purchase_price ? `neto ${formatCOP(net)} · faltan ${formatCOP(Number(incomeRes.data?.remaining ?? m.purchase_price))}` : "registra el valor de compra"}
+        />
       </div>
 
       <SectionTitle>Conductor actual</SectionTitle>

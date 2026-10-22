@@ -1,13 +1,18 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ChevronRight, Plus } from "lucide-react";
-import { Badge, ButtonLink, Card, EmptyState, PageHeader, cx } from "@/components/ui";
+import { Alert, Badge, ButtonLink, Card, EmptyState, PageHeader, cx } from "@/components/ui";
 import { OwnerFilter } from "@/components/owner-filter";
 import { requireAdmin } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { getOwners } from "@/lib/admin";
 import { PAYMENT_METHOD_LABEL, PAYMENT_STATUS_LABEL } from "@/lib/constants";
 import { formatCOP, formatDate, formatDateTime } from "@/lib/format";
+
+const HECHO_LABEL: Record<string, string> = {
+  aprobado: "Pago aprobado ✓",
+  rechazado: "Pago rechazado. El conductor verá el motivo.",
+};
 
 export const metadata: Metadata = { title: "Pagos" };
 
@@ -36,6 +41,7 @@ export default async function PaymentsPage({ searchParams }: PageProps<"/admin/p
   const params = await searchParams;
   const status = TABS.some((t) => t.value === params.estado) ? String(params.estado) : "pending";
   const owner = typeof params.propietario === "string" ? params.propietario : "";
+  const hecho = params.hecho;
   const supabase = await createClient();
 
   let query = supabase
@@ -63,6 +69,12 @@ export default async function PaymentsPage({ searchParams }: PageProps<"/admin/p
           </ButtonLink>
         }
       />
+
+      {typeof hecho === "string" && HECHO_LABEL[hecho] ? (
+        <div className="mb-4">
+          <Alert tone="ok">{HECHO_LABEL[hecho]}</Alert>
+        </div>
+      ) : null}
       <div className="mb-4 flex flex-wrap items-center gap-2">
         <div className="flex rounded-xl border border-line bg-surface p-1">
           {TABS.map((t) => (

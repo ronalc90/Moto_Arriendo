@@ -1,95 +1,89 @@
-# Instalación y despliegue (paso a paso)
+# Instalación, despliegue y operación
 
-Todo lo técnico ya está hecho: base de datos creada en Supabase, seguridad (RLS), archivos privados,
-tu usuario administrador y el código en GitHub. Aquí están solo los pasos que te tocan a ti, en
-español sencillo.
+## Estado actual (todo desplegado)
 
-## Lo que ya existe
+| Pieza | Dónde | Estado |
+| --- | --- | --- |
+| App web (Next.js) | Vercel, proyecto **moto-arriendo** (equipo Koptup's projects) → https://moto-arriendo.vercel.app | Despliegue automático con cada `git push` a `main` |
+| Código | GitHub `ronalc90/Moto_Arriendo` | Rama `main` |
+| Base de datos, usuarios, archivos | Supabase, proyecto **moto-arriendo** (`orhdoywdjhxfnlhbbihy`, EE. UU. Este) | Migraciones aplicadas, registro abierto **apagado**, Site URL configurada |
+| Avisos | Supabase Edge Function `notify` + `pg_cron` cada 15 min | Activos (push). Correo: opcional, ver abajo |
 
-| Qué | Dónde |
-| --- | --- |
-| Código | GitHub: `ronalc90/Moto_Arriendo` (rama `main`) |
-| Base de datos y archivos | Supabase, proyecto **moto-arriendo** (organización Koptup, región EE. UU. Este) |
-| URL de Supabase | `https://orhdoywdjhxfnlhbbihy.supabase.co` |
-| Clave publicable | `sb_publishable_bPo-mJpnIBZx9J5gjUU-8g_hgujZ-9S` (es pública por diseño) |
+> No se usa Railway: Vercel + Supabase cubren todo (incluidas las tareas programadas), sin otro servicio que pagar.
 
-## Paso 1. Publicar la app en Vercel (5 minutos)
+## Variables de entorno (Vercel)
 
-1. Entra a <https://vercel.com> con tu cuenta y elige el equipo **Koptup's projects**.
-2. Toca **Add New… → Project**.
-3. En la lista de repositorios de GitHub busca **Moto_Arriendo** y toca **Import**.
-   - Si no aparece: toca **Adjust GitHub App Permissions**, elige tu usuario `ronalc90`
-     y dale acceso al repositorio `Moto_Arriendo`. Vuelve a Vercel y aparecerá.
-4. En **Project Name** escribe `moto-arriendo`. El framework se detecta solo (Next.js).
-5. Abre **Environment Variables** y agrega estas dos (nombre → valor):
-   - `NEXT_PUBLIC_SUPABASE_URL` → `https://orhdoywdjhxfnlhbbihy.supabase.co`
-   - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` → `sb_publishable_bPo-mJpnIBZx9J5gjUU-8g_hgujZ-9S`
-6. Toca **Deploy** y espera 1–2 minutos. Al terminar te da un enlace como
-   `https://moto-arriendo.vercel.app`.
+| Variable | Valor | ¿Secreta? |
+| --- | --- | --- |
+| `NEXT_PUBLIC_SUPABASE_URL` | `https://orhdoywdjhxfnlhbbihy.supabase.co` | No |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | `sb_publishable_…` | No (RLS protege los datos) |
 
-Desde ahí, cada vez que se suba código a GitHub, Vercel publica la nueva versión solo.
+La clave secreta de Supabase **no se usa en la app**. La función `notify` corre dentro de Supabase y
+recibe su propia clave de servicio automáticamente. Las claves de los avisos (VAPID, clave del cron,
+Resend) se guardan en la tabla privada `private.app_config`, que **no** está expuesta por la API.
 
-## Paso 2. Cerrar el registro abierto en Supabase (1 minuto)
+## Activar los avisos por correo (opcional, 3 minutos)
 
-Solo el administrador debe crear cuentas. Para que nadie pueda registrarse por su cuenta:
+1. Crea una cuenta gratis en https://resend.com con tu correo (dirox7@gmail.com).
+2. En Resend: **API Keys → Create API Key** → copia la clave (empieza por `re_`).
+3. En la app: **Configuración → Avisos por correo (Resend)** → pega la clave → Guardar.
+4. Toca **Enviar notificación de prueba**.
 
-1. Entra a <https://supabase.com/dashboard> y abre el proyecto **moto-arriendo**.
-2. Menú izquierdo: **Authentication → Sign In / Providers** (en algunas versiones: *Providers*).
-3. Apaga **Allow new users to sign up** y guarda.
+Con la cuenta gratuita, Resend solo envía al correo con el que te registraste (suficiente para ti). Para
+enviar a tu socio, verifica un dominio propio en Resend.
 
-(Aunque no lo hagas, una cuenta creada por fuera no ve nada: no tiene perfil. Pero es mejor apagarlo.)
+## Notificaciones push en el celular
 
-4. En **Authentication → URL Configuration**, en **Site URL** pon el enlace que te dio Vercel
-   (por ejemplo `https://moto-arriendo.vercel.app`) y guarda.
+Cada usuario las activa en **Avisos → Activar notificaciones en este celular** (iPhone: primero
+instalar la app en la pantalla de inicio, iOS 16.4 o superior).
 
-## Paso 3. Entrar como administrador
+## Datos de prueba
 
-1. Abre el enlace de Vercel.
-2. Escribe tu correo y la contraseña temporal que te entregué en el chat.
-3. Ve a **Más → Mi cuenta** (o tu nombre arriba a la derecha) y **cambia la contraseña**.
+- Cargar: `supabase/seed/seed_test_data.sql` en Supabase → SQL Editor → Run.
+- Borrar: `supabase/seed/clean_test_data.sql`.
+- Conductores de prueba: **3000000001** (Hamer) y **3000000002** (Jeison), contraseña `Prueba2026!`.
 
-## Paso 4. Instalar la app en el celular
-
-- **Android (Chrome):** abre el enlace → menú ⋮ → **Instalar app** (o *Agregar a la pantalla principal*).
-- **iPhone (Safari):** abre el enlace → botón **Compartir** → **Agregar a inicio**.
-
-## Para un programador: correr el proyecto en un computador
+## Para un programador
 
 ```bash
-git clone https://github.com/ronalc90/Moto_Arriendo.git
-cd Moto_Arriendo
+git clone https://github.com/ronalc90/Moto_Arriendo.git && cd Moto_Arriendo
 npm install
-cp .env.example .env.local      # y pegar la URL y la clave publicable
-npm run dev                      # http://localhost:3000
+cp .env.example .env.local        # pegar URL y clave publicable
+npm run dev                        # http://localhost:3000
+npm run build && npm start         # modo producción
+npm run lint
+PGHOST=localhost PGUSER=postgres npm run test:db   # saldo, RLS, avisos y finanzas (PostgreSQL local)
+npm run test:rls                   # RLS en vivo contra Supabase con los conductores de prueba
+npm run icons                      # regenerar íconos de la PWA
 ```
 
 ### Base de datos
 
-Las migraciones están en `supabase/migrations/` y ya están aplicadas en el proyecto. Para un proyecto
-nuevo de Supabase, ejecútalas en orden en **SQL Editor** (o con la CLI: `supabase db push`).
-
-Pruebas automáticas de saldo y seguridad contra un PostgreSQL local:
-
-```bash
-PGHOST=localhost PGUSER=postgres npm run test:db
-```
-
-### Crear un administrador nuevo desde SQL
-
-En Supabase → SQL Editor:
+Migraciones en `supabase/migrations/` (orden por nombre). En un proyecto nuevo de Supabase:
+ejecutarlas en orden en el SQL Editor (o `supabase db push`), desplegar `supabase/functions/notify`
+(`supabase functions deploy notify --no-verify-jwt`) y cargar `private.app_config`:
 
 ```sql
-select public.admin_create_user('correo@ejemplo.com', 'ContraseñaSegura123', 'Nombre Apellido', 'admin');
+insert into private.app_config (key, value) values
+  ('cron', '<texto aleatorio de 40+ caracteres>'),
+  ('functions_url', 'https://<ref>.supabase.co/functions/v1'),
+  ('vapid_public', '<clave pública VAPID>'),
+  ('vapid_private', '<clave privada VAPID>'),
+  ('vapid_subject', 'mailto:tu@correo.com'),
+  ('app_url', 'https://<tu-app>.vercel.app');
 ```
 
-(Los conductores se crean desde la app, en **Conductores → Nuevo**.)
+(Claves VAPID: `npx web-push generate-vapid-keys`.)
 
-### Variables de entorno
+### Crear un administrador desde SQL
 
-| Variable | Dónde se usa | ¿Secreta? |
-| --- | --- | --- |
-| `NEXT_PUBLIC_SUPABASE_URL` | Navegador y servidor | No |
-| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Navegador y servidor | No (RLS protege los datos) |
+```sql
+select public.admin_create_user('correo@ejemplo.com', 'ContraseñaSegura123', 'Nombre', 'admin');
+```
 
-La clave secreta de Supabase (`service_role` / `sb_secret_…`) **no se usa** y nunca debe ponerse en
-Vercel ni en el repositorio.
+### Avisos del asesor de seguridad de Supabase (revisados)
+
+- *Funciones SECURITY DEFINER ejecutables por usuarios*: intencional. Todas validan `is_admin()` o
+  solo devuelven datos del propio usuario.
+- *pg_net en el esquema public*: así lo instala Supabase; no expone datos.
+- *Protección de contraseñas filtradas*: disponible solo en el plan Pro de Supabase.

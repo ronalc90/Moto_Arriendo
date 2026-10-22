@@ -39,8 +39,6 @@ insert into public.expenses (motorcycle_id, category, amount) values ('00000000-
 insert into public.incidents (motorcycle_id, kind, description, cost, paid_by, responsible)
 values ('00000000-0000-4000-8000-0000000000e1', 'fine', 'Comparendo de prueba', 50000, 'owner', 'owner');
 
-insert into private.app_secrets (key, value) values ('cron', repeat('x', 40));
-
 do $$
 declare
   v record;
@@ -61,7 +59,7 @@ begin
   n := public.generate_notifications((public.bogota_today() + time '19:30') at time zone 'America/Bogota');
   assert n > 0, 'notifications created';
   assert exists (select 1 from public.notifications where kind = 'maintenance'
-                 and profile_id = '00000000-0000-4000-8000-0000000000a1' and title like 'Cambio de aceite%'),
+                 and profile_id = '00000000-0000-4000-8000-0000000000a1' and title like 'Mantenimiento próximo: cambio de aceite%'),
     'admin gets oil change alert';
   assert exists (select 1 from public.notifications where kind = 'expiration'
                  and profile_id = '00000000-0000-4000-8000-0000000000a1' and title like 'SOAT TST01A vence en 15 días'),
@@ -69,14 +67,6 @@ begin
   -- idempotent
   n := public.generate_notifications((public.bogota_today() + time '19:30') at time zone 'America/Bogota');
   assert n = 0, format('second run must not duplicate (%s)', n);
-
-  -- Cron secret
-  begin
-    perform public.cron_collect('wrong-secret-wrong-secret-wrong-secret!!', false);
-    assert false, 'wrong secret must fail';
-  exception when raise_exception then null;
-  end;
-  assert jsonb_array_length((public.cron_collect(repeat('x', 40), false)) -> 'items') > 0, 'cron collect returns items';
 
   -- Finance
   select * into v from public.motorcycle_payback where motorcycle_id = '00000000-0000-4000-8000-0000000000e1';

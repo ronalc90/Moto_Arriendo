@@ -128,7 +128,25 @@ flowchart LR
   E -- 30 / 15 / 7 --> G[Avisos por correo y push<br/>Fase 2]
 ```
 
-## 7. Seguridad (quién ve qué)
+## 7. Avisos automáticos
+
+```mermaid
+flowchart LR
+  subgraph DB["PostgreSQL (Supabase)"]
+    T1[Triggers: pago nuevo,<br/>pago aprobado/rechazado,<br/>daño reportado] --> N[(notifications)]
+    CR[pg_cron cada 15 min] --> G[generate_notifications:<br/>recordatorio 7 p. m., atrasos,<br/>vencimientos 30/15/7,<br/>mantenimiento, inspección]
+    G --> N
+    N -->|trigger + pg_net| F
+    CR -->|pg_net| F
+  end
+  F[Edge Function notify] --> P[Web Push<br/>al celular]
+  F --> E[Correo Resend<br/>administradores]
+  N --> B[Campana de avisos<br/>en la app]
+```
+
+Cada aviso tiene una clave única (por ejemplo `exp:soat:<moto>:<fecha>:15`), así nunca se repite.
+
+## 8. Seguridad (quién ve qué)
 
 | Información | Administrador | Conductor |
 | --- | --- | --- |

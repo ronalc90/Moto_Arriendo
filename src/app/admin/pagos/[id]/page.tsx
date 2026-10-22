@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, ExternalLink } from "lucide-react";
 import { ActionForm } from "@/components/action-form";
-import { Badge, Card, Field, Input, SectionTitle, Textarea } from "@/components/ui";
+import { Alert, Badge, Card, Field, Input, SectionTitle, Textarea } from "@/components/ui";
 import { LightBadge } from "@/components/traffic-light";
 import { requireAdmin } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
@@ -13,11 +13,17 @@ import { formatCOP, formatDate, formatDateTime, formatPhone, formatThousands } f
 import type { ContractSummary, Payment } from "@/lib/types";
 import { approvePayment, rejectPayment, reopenPayment } from "../actions";
 
+const HECHO_LABEL: Record<string, string> = {
+  aprobado: "Pago aprobado ✓",
+  rechazado: "Pago rechazado. El conductor verá el motivo.",
+};
+
 export const metadata: Metadata = { title: "Revisar pago" };
 
-export default async function PaymentDetailPage({ params }: PageProps<"/admin/pagos/[id]">) {
+export default async function PaymentDetailPage({ params, searchParams }: PageProps<"/admin/pagos/[id]">) {
   await requireAdmin();
   const { id } = await params;
+  const hecho = (await searchParams).hecho;
   const supabase = await createClient();
   const { data } = await supabase
     .from("payments")
@@ -66,6 +72,12 @@ export default async function PaymentDetailPage({ params }: PageProps<"/admin/pa
         <ArrowLeft className="size-4" /> Pagos
       </Link>
 
+
+      {typeof hecho === "string" && HECHO_LABEL[hecho] ? (
+        <div className="mb-4">
+          <Alert tone="ok">{HECHO_LABEL[hecho]}</Alert>
+        </div>
+      ) : null}
       <div className="grid gap-5 lg:grid-cols-[1.2fr_1fr]">
         {/* Receipt */}
         <Card className="p-2">

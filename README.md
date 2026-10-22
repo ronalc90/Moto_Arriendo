@@ -14,7 +14,7 @@ atrasos con semáforo, documentos con vencimientos, inspecciones semanales y rep
 | Web y servidor | Next.js 16 (App Router) + TypeScript + Tailwind CSS 4 |
 | Base de datos, usuarios y archivos | Supabase (PostgreSQL, Auth, Storage) |
 | Seguridad | Row Level Security (RLS) en todas las tablas y buckets privados |
-| Despliegue | Vercel (la app) + Supabase (datos) |
+| Despliegue | Vercel (la app, https://moto-arriendo.vercel.app) + Supabase (datos, avisos programados) |
 | Celular | PWA instalable (manifest + service worker) |
 
 Moneda en COP sin decimales (`$40.000`), fechas `dd/mm/aaaa`, zona horaria `America/Bogota` para
@@ -26,6 +26,18 @@ todos los cálculos de días y horas límite.
 - [Arquitectura y diagramas de flujo](docs/arquitectura.md)
 - [Reglas de negocio (saldo, atraso, semáforo, préstamos)](docs/reglas-de-negocio.md)
 - [Modelo de datos](docs/modelo-de-datos.md)
+- [Manual del administrador](docs/manual-administrador.md)
+- [Manual del conductor](docs/manual-conductor.md)
+- [Avisos por WhatsApp: evaluación de costos](docs/whatsapp.md)
+
+## Fases entregadas
+
+| Fase | Contenido |
+| --- | --- |
+| 0 | Proyecto, Supabase con RLS y buckets privados, login, PWA, despliegue en Vercel |
+| 1 | Conductores, motos, documentos con vencimientos, contratos, pagos (subir/aprobar/rechazar), saldo, semáforo, calendario, préstamos, días exentos, inspección semanal, daños, panel Hoy, datos de prueba, pruebas de RLS |
+| 2 | Mantenimiento por kilometraje (configurable) con facturas y quién pagó; avisos automáticos (campana, push y correo) |
+| 3 | Incidentes (accidentes, multas, inmovilizaciones, robo), gastos, reportes financieros por moto y propietario con gráficas de recuperación de la inversión, exportar a Excel, evaluación de WhatsApp + enlaces gratis |
 
 ## Comandos
 
@@ -34,7 +46,8 @@ npm install          # instalar dependencias
 cp .env.example .env.local   # y llenar los 2 valores de Supabase
 npm run dev          # abrir en http://localhost:3000
 npm run build        # compilar para producción
-npm run test:db      # pruebas de saldo y RLS contra un PostgreSQL local (ver docs)
+npm run test:db      # pruebas de saldo, RLS, avisos y finanzas (PostgreSQL local)
+npm run test:rls     # prueba de seguridad en vivo contra Supabase
 ```
 
 ## Estructura
@@ -52,8 +65,10 @@ src/
   lib/                Supabase, formatos (COP, fechas Bogotá), autenticación
   proxy.ts            refresca la sesión y protege las rutas
 supabase/
-  migrations/         esquema, lógica de negocio, RLS, buckets
-  tests/              pruebas automáticas de saldo y RLS
+  migrations/         esquema, lógica de negocio, RLS, buckets, avisos, finanzas
+  functions/notify/   envío de notificaciones push y correo (Edge Function)
+  seed/               datos de prueba y script para borrarlos
+  tests/              pruebas automáticas de saldo, RLS, avisos y finanzas
 public/sw.js          service worker (PWA y notificaciones push)
 ```
 

@@ -1,8 +1,14 @@
 import { AppShell, type NavItem } from "@/components/app-shell";
 import { requireDriver } from "@/lib/auth";
+import { createClient } from "@/lib/supabase/server";
 
 export default async function DriverLayout({ children }: LayoutProps<"/conductor">) {
   const profile = await requireDriver();
+  const supabase = await createClient();
+  const { count: unread } = await supabase
+    .from("notifications")
+    .select("id", { count: "exact", head: true })
+    .is("read_at", null);
 
   const primary: NavItem[] = [
     { href: "/conductor", label: "Inicio", icon: "home" },
@@ -22,6 +28,7 @@ export default async function DriverLayout({ children }: LayoutProps<"/conductor
       rootHref="/conductor"
       userName={profile.full_name}
       roleLabel="Conductor"
+      unread={unread ?? 0}
     >
       <div className="mx-auto max-w-xl">{children}</div>
     </AppShell>

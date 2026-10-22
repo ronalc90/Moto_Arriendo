@@ -5,7 +5,11 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useState, type ReactNode } from "react";
 import {
+  Bell,
+  BarChart3,
   Bike,
+  Siren,
+  Wallet,
   CalendarDays,
   CalendarOff,
   ClipboardCheck,
@@ -41,6 +45,10 @@ const ICONS = {
   wrench: Wrench,
   settings: Settings,
   user: UserRound,
+  bell: Bell,
+  chart: BarChart3,
+  siren: Siren,
+  wallet: Wallet,
 } satisfies Record<string, LucideIcon>;
 export type IconName = keyof typeof ICONS;
 
@@ -59,6 +67,7 @@ export function AppShell({
   rootHref,
   userName,
   roleLabel,
+  unread = 0,
 }: {
   children: ReactNode;
   primary: NavItem[];
@@ -66,7 +75,23 @@ export function AppShell({
   rootHref: string;
   userName: string;
   roleLabel: string;
+  unread?: number;
 }) {
+  const notificationsHref = `${rootHref}/avisos`;
+  const bell = (
+    <Link
+      href={notificationsHref}
+      className="relative rounded-xl p-2 text-ink-2 hover:bg-surface-2"
+      aria-label={unread ? `Avisos (${unread} sin leer)` : "Avisos"}
+    >
+      <Bell className="size-5" />
+      {unread ? (
+        <span className="absolute -top-0.5 -right-0.5 min-w-5 rounded-full bg-bad px-1 text-center text-[11px] font-bold leading-5 text-white">
+          {unread > 99 ? "99+" : unread}
+        </span>
+      ) : null}
+    </Link>
+  );
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const all = [...primary, ...secondary];
@@ -101,7 +126,10 @@ export function AppShell({
           <Image src="/icons/icon-192.png" alt="" width={36} height={36} className="rounded-xl" />
           <span className="text-lg font-bold text-[#f5f4ef]">Moto Arriendo</span>
         </Link>
-        <nav className="flex-1 space-y-1 overflow-y-auto">{all.map((i) => link(i))}</nav>
+        <nav className="flex-1 space-y-1 overflow-y-auto">
+          {all.map((i) => link(i))}
+          {link({ href: notificationsHref, label: "Avisos", icon: "bell", badge: unread })}
+        </nav>
         <div className="mt-4 border-t border-white/10 pt-4">
           <Link href="/cuenta" className="block px-3 text-sm text-[#c3c6cc] hover:text-white">
             <span className="block font-semibold text-[#f5f4ef]">{userName}</span>
@@ -122,9 +150,12 @@ export function AppShell({
             <Image src="/icons/icon-192.png" alt="" width={30} height={30} className="rounded-lg" />
             <span className="font-bold">Moto Arriendo</span>
           </Link>
-          <Link href="/cuenta" className="max-w-[45%] truncate text-sm text-ink-2" aria-label="Mi cuenta">
-            {userName}
-          </Link>
+          <div className="flex items-center gap-1">
+            {bell}
+            <Link href="/cuenta" className="max-w-36 truncate rounded-xl px-2 py-2 text-sm text-ink-2" aria-label="Mi cuenta">
+              {userName.split(" ")[0]}
+            </Link>
+          </div>
         </header>
 
         <main className="mx-auto w-full max-w-6xl flex-1 px-4 pt-5 pb-28 sm:px-6 md:pb-10 md:pt-8">

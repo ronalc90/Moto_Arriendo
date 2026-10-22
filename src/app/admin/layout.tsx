@@ -5,10 +5,10 @@ import { createClient } from "@/lib/supabase/server";
 export default async function AdminLayout({ children }: LayoutProps<"/admin">) {
   const profile = await requireAdmin();
   const supabase = await createClient();
-  const { count: pendingPayments } = await supabase
-    .from("payments")
-    .select("id", { count: "exact", head: true })
-    .eq("status", "pending");
+  const [{ count: pendingPayments }, { count: unread }] = await Promise.all([
+    supabase.from("payments").select("id", { count: "exact", head: true }).eq("status", "pending"),
+    supabase.from("notifications").select("id", { count: "exact", head: true }).is("read_at", null),
+  ]);
 
   const primary: NavItem[] = [
     { href: "/admin", label: "Hoy", icon: "home" },
@@ -22,6 +22,9 @@ export default async function AdminLayout({ children }: LayoutProps<"/admin">) {
     { href: "/admin/dias-exentos", label: "Días exentos", icon: "calendarOff" },
     { href: "/admin/inspecciones", label: "Inspecciones", icon: "check" },
     { href: "/admin/danos", label: "Daños", icon: "damage" },
+    { href: "/admin/incidentes", label: "Incidentes", icon: "siren" },
+    { href: "/admin/gastos", label: "Gastos", icon: "wallet" },
+    { href: "/admin/reportes", label: "Reportes", icon: "chart" },
     { href: "/admin/configuracion", label: "Configuración", icon: "settings" },
   ];
 
@@ -32,6 +35,7 @@ export default async function AdminLayout({ children }: LayoutProps<"/admin">) {
       rootHref="/admin"
       userName={profile.full_name}
       roleLabel="Administrador"
+      unread={unread ?? 0}
     >
       {children}
     </AppShell>
