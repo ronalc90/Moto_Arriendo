@@ -39,9 +39,13 @@ instalar la app en la pantalla de inicio, iOS 16.4 o superior).
 
 ## Datos de prueba
 
-- Cargar: `supabase/seed/seed_test_data.sql` en Supabase → SQL Editor → Run.
+Solo para un proyecto local o de pruebas, nunca en el de producción.
+
+- Cargar: abre `supabase/seed/seed_test_data.sql`, escribe en `v_password` (al comienzo del script) la
+  contraseña que tendrán los conductores de prueba y córrelo en Supabase → SQL Editor → Run. No guardes esa
+  contraseña en el repositorio.
 - Borrar: `supabase/seed/clean_test_data.sql`.
-- Conductores de prueba: **3000000001** (Hamer) y **3000000002** (Jeison), contraseña `Prueba2026!`.
+- Conductores de prueba: **3000000001** (Hamer) y **3000000002** (Jeison), con la contraseña que elegiste.
 
 ## Para un programador
 
@@ -53,7 +57,7 @@ npm run dev                        # http://localhost:3000
 npm run build && npm start         # modo producción
 npm run lint
 PGHOST=localhost PGUSER=postgres npm run test:db   # saldo, RLS, avisos y finanzas (PostgreSQL local)
-npm run test:rls                   # RLS en vivo contra Supabase con los conductores de prueba
+TEST_DRIVER_PASSWORD=... npm run test:rls   # RLS en vivo con los conductores de prueba (la clave del seed)
 npm run icons                      # regenerar íconos de la PWA
 ```
 
