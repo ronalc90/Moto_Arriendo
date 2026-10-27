@@ -16,6 +16,8 @@ export const USERNAME_RE = /^[a-z][a-z0-9._-]{2,29}$/;
 /** Minimum length for passwords the admin assigns / the user chooses. */
 export const MIN_ASSIGNED_PASSWORD = 4;
 export const MIN_OWN_PASSWORD = 6; // Supabase Auth rejects shorter ones
+/** Administrators are never asked to change the password they get (enforced in the database too). */
+export const MIN_ADMIN_PASSWORD = 10;
 
 export const APP_NAME = "Moto Arriendo";
 

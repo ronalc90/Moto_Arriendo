@@ -6,6 +6,7 @@ import { requireAdmin } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { dbError, done, fail, type ActionState } from "@/lib/action-state";
 import { parseCOP } from "@/lib/format";
+import { MIN_ADMIN_PASSWORD } from "@/lib/constants";
 
 const int = (min: number, max: number) => z.coerce.number().int().min(min).max(max);
 
@@ -60,7 +61,7 @@ export async function createAdmin(_prev: ActionState, formData: FormData): Promi
     .object({
       full_name: z.string().trim().min(3, "Escribe el nombre"),
       email: z.string().trim().email("Correo inválido"),
-      password: z.string().min(4, "La contraseña debe tener al menos 4 caracteres"),
+      password: z.string().min(MIN_ADMIN_PASSWORD, `La contraseña debe tener al menos ${MIN_ADMIN_PASSWORD} caracteres`),
     })
     .safeParse({
       full_name: String(formData.get("full_name") ?? ""),

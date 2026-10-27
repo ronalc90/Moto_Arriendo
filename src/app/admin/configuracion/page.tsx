@@ -10,6 +10,7 @@ import { buttonClass } from "@/components/ui";
 import { requireAdmin } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { WEEKDAYS, formatDateTime, formatThousands } from "@/lib/format";
+import { MIN_ADMIN_PASSWORD } from "@/lib/constants";
 import { createAdmin, saveEmailSettings, updateSettings } from "./actions";
 
 export const metadata: Metadata = { title: "Configuración" };
@@ -173,7 +174,7 @@ export default async function SettingsPage() {
                 <Input id="email" name="email" type="email" required />
               </Field>
               <Field label="Contraseña" htmlFor="admin_password">
-                <Input id="admin_password" name="password" minLength={4} required autoComplete="new-password" />
+                <Input id="admin_password" name="password" minLength={MIN_ADMIN_PASSWORD} required autoComplete="new-password" />
               </Field>
             </div>
           </ActionForm>

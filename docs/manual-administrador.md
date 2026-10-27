@@ -51,7 +51,7 @@ que lo completes.
 | Ver ganancias y cuánto falta para recuperar cada moto | Reportes |
 | Descargar pagos o gastos en Excel | Reportes o Gastos → botón Excel |
 | Terminar un contrato | Contratos → abre el contrato → Terminar contrato |
-| Agregar a tu socio como administrador | Configuración → Agregar administrador |
+| Agregar a tu socio como administrador | Configuración → Agregar administrador (contraseña de al menos 10 caracteres) |
 | Ver quién aprobó qué | Configuración → Registro de cambios, o el historial de cada pago |
 
 ## Avisos automáticos
