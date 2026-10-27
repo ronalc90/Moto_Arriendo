@@ -132,6 +132,15 @@ begin
 end;
 $$;
 
+-- The driver insert below goes through the payments trigger, which splits with the
+-- real now(), not the fixed 21/10 above. Top up A's approved fee through today so A
+-- is still up to date whenever the test runs (no-op on 21/10).
+update public.payments
+   set total_amount = total_amount + x.extra, rate_amount = rate_amount + x.extra
+  from (select greatest(public.expected_rate('00000000-0000-4000-8000-0000000000c1', '2026-09-28',
+                                             public.bogota_today()) - 840000, 0) as extra) x
+ where contract_id = '00000000-0000-4000-8000-0000000000c1' and status = 'approved';
+
 -- ---------------------------------------------------------------------------
 -- RLS assertions: act as driver A
 -- ---------------------------------------------------------------------------
