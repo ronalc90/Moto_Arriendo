@@ -24,6 +24,17 @@ create table auth.identities (
   id uuid primary key, user_id uuid references auth.users (id) on delete cascade, provider_id text,
   identity_data jsonb, provider text, last_sign_in_at timestamptz, created_at timestamptz, updated_at timestamptz
 );
+-- One row per signed-in device; refresh tokens hang from their session (same
+-- columns and cascades as Supabase Auth, only the ones the migrations use).
+create table auth.sessions (
+  id uuid primary key, user_id uuid not null references auth.users (id) on delete cascade,
+  created_at timestamptz, updated_at timestamptz
+);
+create table auth.refresh_tokens (
+  instance_id uuid, id bigserial primary key, token varchar(255) unique, user_id varchar(255),
+  revoked boolean, created_at timestamptz, updated_at timestamptz, parent varchar(255),
+  session_id uuid references auth.sessions (id) on delete cascade
+);
 create function auth.uid() returns uuid language sql stable as $$
   select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid
 $$;

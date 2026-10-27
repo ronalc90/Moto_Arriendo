@@ -1,10 +1,14 @@
 -- =============================================================================
--- Test data (seed) — run in Supabase SQL Editor. Safe to re-run: it deletes the
--- previous test data first (only rows created by this script).
+-- Test data (seed) — ONLY for a local or test project, never for production.
+-- Run in Supabase SQL Editor. Safe to re-run: it deletes the previous test data
+-- first (only rows created by this script).
+--
+-- Before running it, write the drivers' password in v_password (below). Do not
+-- commit it: the script refuses to run with an empty one.
 --
 -- Creates:
 --   * Drivers "Hamer (prueba)" 3000000001 and "Jeison (prueba)" 3000000002
---     password: Prueba2026!
+--     with the password you wrote in v_password
 --   * Motorcycles PRU01A and PRU02A (Bajaj Boxer CT100), owner = first admin
 --   * Contracts starting 3 weeks ago, $40.000/day, rest day Sunday
 --   * Loan "Pase A2" $1.200.000 with $10.000 daily installment for Hamer
@@ -16,6 +20,7 @@
 -- =============================================================================
 do $$
 declare
+  v_password text := '';  -- <- the test drivers' password (at least 8 characters)
   v_owner uuid;
   v_hamer uuid;
   v_jeison uuid;
@@ -29,6 +34,10 @@ declare
   v_last_due date;
   d record;
 begin
+  if length(v_password) < 8 then
+    raise exception 'Escribe en v_password (al comienzo del script) la contraseña de los conductores de prueba, mínimo 8 caracteres';
+  end if;
+
   -- 0) Clean previous test data
   delete from public.payments where motorcycle_id in (select id from public.motorcycles where plate in ('PRU01A', 'PRU02A', 'PRU03A'));
   delete from public.inspections where motorcycle_id in (select id from public.motorcycles where plate in ('PRU01A', 'PRU02A', 'PRU03A'));
@@ -49,9 +58,9 @@ begin
   v_last_due := case when (now() at time zone 'America/Bogota')::time >= time '21:00' then v_today else v_today - 1 end;
 
   -- 1) Drivers
-  v_hamer := public.admin_create_driver('Hamer (prueba)', '3000000001', 'Prueba2026!', '1000000001',
+  v_hamer := public.admin_create_driver('Hamer (prueba)', '3000000001', v_password, '1000000001',
     'L-0001', 'A2', v_today + 25, 'María (mamá)', '3001112233', 'Ronald', 300000, 'Conductor de prueba');
-  v_jeison := public.admin_create_driver('Jeison (prueba)', '3000000002', 'Prueba2026!', '1000000002',
+  v_jeison := public.admin_create_driver('Jeison (prueba)', '3000000002', v_password, '1000000002',
     'L-0002', 'A2', v_today + 300, 'Carlos (hermano)', '3004445566', 'Ronald', 300000, 'Conductor de prueba');
   update public.profiles set data_consent_at = now() - interval '20 days'
    where id = (select profile_id from public.drivers where id = v_hamer);

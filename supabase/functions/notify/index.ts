@@ -32,6 +32,21 @@ async function config(key: string): Promise<string | null> {
   return (data as string | null) ?? null;
 }
 
+/**
+ * Constant-time comparison of the cron key: `!==` stops at the first different
+ * character, so response times could reveal the key bit by bit. Hashing first
+ * gives two 32-byte values (hiding the length too); then every byte is compared.
+ */
+async function sameSecret(given: string, expected: string): Promise<boolean> {
+  const encoder = new TextEncoder();
+  const [a, b] = await Promise.all(
+    [given, expected].map(async (s) => new Uint8Array(await crypto.subtle.digest("SHA-256", encoder.encode(s)))),
+  );
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a[i] ^ b[i];
+  return diff === 0;
+}
+
 function escapeHtml(s: string) {
   return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
 }
@@ -41,7 +56,7 @@ Deno.serve(async (req) => {
 
   const expected = await config("cron");
   const given = req.headers.get("x-cron-key");
-  if (!expected || !given || given !== expected) return new Response("Unauthorized", { status: 401 });
+  if (!expected || !given || !(await sameSecret(given, expected))) return new Response("Unauthorized", { status: 401 });
 
   let generate = false;
   try {

@@ -1,6 +1,8 @@
 // Live RLS check against the real Supabase project using the test drivers
 // created by supabase/seed/seed_test_data.sql.
-// Usage: npm run test:rls   (reads NEXT_PUBLIC_SUPABASE_* from .env.local)
+// Usage: TEST_DRIVER_PASSWORD=... npm run test:rls
+//   (reads NEXT_PUBLIC_SUPABASE_* from .env.local; the password is the one
+//   written in v_password when the seed was loaded)
 import { readFileSync } from "node:fs";
 import { createClient } from "@supabase/supabase-js";
 
@@ -12,7 +14,11 @@ const env = Object.fromEntries(
 );
 const URL_ = env.NEXT_PUBLIC_SUPABASE_URL;
 const KEY = env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
-const PASSWORD = process.env.TEST_DRIVER_PASSWORD ?? "Prueba2026!";
+const PASSWORD = process.env.TEST_DRIVER_PASSWORD;
+if (!PASSWORD) {
+  console.error("Define TEST_DRIVER_PASSWORD con la contraseña de los conductores de prueba (v_password del seed).");
+  process.exit(1);
+}
 
 let failures = 0;
 const check = (ok, msg) => {
