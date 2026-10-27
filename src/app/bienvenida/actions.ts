@@ -82,7 +82,9 @@ export async function completeWelcome(_prev: WelcomeState, formData: FormData): 
     if (problem) return { error: problem, values };
     const { error } = await supabase.auth.updateUser({ password });
     if (error) return { error: authPasswordError(error.message), values };
-    await supabase.rpc("mark_password_changed");
+    // The database checks that the password really changed before clearing the flag.
+    const { error: markError } = await supabase.rpc("mark_password_changed");
+    if (markError) return { error: dbError(markError, "No pudimos guardar tu contraseña. Intenta de nuevo."), values };
   }
 
   redirect("/conductor?bienvenido=1");

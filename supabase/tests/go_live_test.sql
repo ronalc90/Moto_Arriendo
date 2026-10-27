@@ -125,6 +125,10 @@ do $$ begin
   exception when raise_exception then if sqlerrm like 'FAIL%' then raise; end if;
   end;
   assert (select national_id = '1012345678' from public.drivers where id = public.my_driver_id()), 'cédula unchanged';
+  -- Hamer chooses his own password in Supabase Auth (that changes the stored hash)
+  reset role;
+  update auth.users set encrypted_password = extensions.crypt('MiClave2026', extensions.gen_salt('bf')) where id = auth.uid();
+  set local role authenticated;
   perform public.mark_password_changed();
   assert not (select must_change_password from public.profiles where username = 'hamer'), 'password flag cleared';
   -- a driver cannot change rates or create accounts
