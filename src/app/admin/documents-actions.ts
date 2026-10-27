@@ -85,15 +85,20 @@ export async function deleteDocument(_prev: ActionState, formData: FormData): Pr
   if (error) return fail(dbError(error));
   // Remove the file only when it lives in this document's own folder and no
   // other row still points to it (never trust a path someone else wrote).
+  // The path is compared with .eq() (escaped by the client): a driver writes
+  // file_path through the API, so it must never become part of a filter string.
   if (doc) {
     const owner = doc.entity === "motorcycle" ? `moto/${doc.motorcycle_id}/` : `${doc.driver_id}/`;
     for (const path of [doc.file_path, doc.back_file_path]) {
       if (!path || !path.startsWith(owner) || path.includes("..")) continue;
-      const { count } = await supabase
-        .from("documents")
-        .select("id", { count: "exact", head: true })
-        .or(`file_path.eq.${path},back_file_path.eq.${path}`);
-      if ((count ?? 0) === 0) await supabase.storage.from("documents").remove([path]);
+      const refs = await Promise.all(
+        (["file_path", "back_file_path"] as const).map((column) =>
+          supabase.from("documents").select("id", { count: "exact", head: true }).eq(column, path),
+        ),
+      );
+      // Keep the file when in doubt (a failed count is not "nobody uses it").
+      if (refs.some((r) => r.error || r.count === null || r.count > 0)) continue;
+      await supabase.storage.from("documents").remove([path]);
     }
   }
   revalidatePath("/admin", "layout");

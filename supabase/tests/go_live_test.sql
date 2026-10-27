@@ -39,6 +39,19 @@ begin
     raise exception 'FAIL: 3-character password accepted';
   exception when raise_exception then if sqlerrm like 'FAIL%' then raise; end if;
   end;
+  -- Administrators: never a short password (they are not asked to change it)
+  begin
+    perform public.admin_create_user('socio@example.com', '123456789', 'Socio', 'admin');
+    raise exception 'FAIL: admin with a 9-character password accepted';
+  exception when raise_exception then if sqlerrm like 'FAIL%' then raise; end if;
+  end;
+  perform public.admin_create_user('socio@example.com', 'ClaveLarga2026', 'Socio', 'admin');
+  begin
+    perform public.admin_set_password((select id from public.profiles where email = 'socio@example.com'), '1234');
+    raise exception 'FAIL: admin password reset to 4 characters';
+  exception when raise_exception then if sqlerrm like 'FAIL%' then raise; end if;
+  end;
+  perform public.admin_set_password((select id from public.profiles where username = 'hamer'), '4321');
   perform public.admin_create_driver_account('Jeison', 'jeison', null, '1234');
 
   -- C) pending setup: both drivers need a motorcycle + contract and their data
@@ -104,6 +117,14 @@ do $$ begin
   assert (select onboarded_at is not null and phone = '3001234567' and full_name = 'Hamer Pérez'
             from public.profiles where username = 'hamer'), 'profile completed';
   assert (select national_id = '1012345678' and license_category = 'A2' from public.drivers where id = public.my_driver_id()), 'driver completed';
+  -- Only once: afterwards the admin edits the driver's data
+  begin
+    perform public.complete_driver_onboarding('Otro Nombre', '3001234567', '99999999', 'L999999', 'A2',
+      public.bogota_today() + 300, 'María Pérez', '3109876543');
+    raise exception 'FAIL: onboarding data rewritten after the first sign-in';
+  exception when raise_exception then if sqlerrm like 'FAIL%' then raise; end if;
+  end;
+  assert (select national_id = '1012345678' from public.drivers where id = public.my_driver_id()), 'cédula unchanged';
   perform public.mark_password_changed();
   assert not (select must_change_password from public.profiles where username = 'hamer'), 'password flag cleared';
   -- a driver cannot change rates or create accounts
